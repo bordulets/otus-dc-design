@@ -59,30 +59,30 @@ neighbor 10.20.0.0/16 remote-as route-map leaf-ases
 ```
 ### Вывод маршрутной информации
 ```
-10.10.0.1/32, ubest/mbest: 1/0
-    *via 10.20.1.1, [20/0], 00:16:20, bgp-65000, external, tag 65301
-10.10.0.2/32, ubest/mbest: 1/0
-    *via 10.20.1.3, [20/0], 00:15:55, bgp-65000, external, tag 65302
-10.10.0.3/32, ubest/mbest: 1/0
-    *via 10.20.1.5, [20/0], 00:15:45, bgp-65000, external, tag 65303
 10.10.1.0/32, ubest/mbest: 2/0, attached
-    *via 10.10.1.0, Lo1, [0/0], 02:03:29, local
-    *via 10.10.1.0, Lo1, [0/0], 02:03:29, direct
+    *via 10.10.1.0, Lo1, [0/0], 02:16:39, local
+    *via 10.10.1.0, Lo1, [0/0], 02:16:39, direct
+10.11.0.1/32, ubest/mbest: 1/0
+    *via 10.20.1.1, [20/0], 00:02:23, bgp-65000, external, tag 65301
+10.11.0.2/32, ubest/mbest: 1/0
+    *via 10.20.1.3, [20/0], 00:02:05, bgp-65000, external, tag 65302
+10.11.0.3/32, ubest/mbest: 1/0
+    *via 10.20.1.5, [20/0], 00:01:47, bgp-65000, external, tag 65303
 10.11.1.0/32, ubest/mbest: 2/0, attached
-    *via 10.11.1.0, Lo2, [0/0], 02:03:29, local
-    *via 10.11.1.0, Lo2, [0/0], 02:03:29, direct
+    *via 10.11.1.0, Lo2, [0/0], 02:16:39, local
+    *via 10.11.1.0, Lo2, [0/0], 02:16:39, direct
 10.20.1.0/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.0, Eth1/1, [0/0], 02:03:29, direct
+    *via 10.20.1.0, Eth1/1, [0/0], 02:16:39, direct
 10.20.1.0/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.0, Eth1/1, [0/0], 02:03:29, local
+    *via 10.20.1.0, Eth1/1, [0/0], 02:16:39, local
 10.20.1.2/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.2, Eth1/2, [0/0], 02:03:29, direct
+    *via 10.20.1.2, Eth1/2, [0/0], 02:16:39, direct
 10.20.1.2/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.2, Eth1/2, [0/0], 02:03:29, local
+    *via 10.20.1.2, Eth1/2, [0/0], 02:16:39, local
 10.20.1.4/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.4, Eth1/3, [0/0], 02:03:29, direct
+    *via 10.20.1.4, Eth1/3, [0/0], 02:16:39, direct
 10.20.1.4/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.4, Eth1/3, [0/0], 02:03:29, local
+    *via 10.20.1.4, Eth1/3, [0/0], 02:16:39, local
 ```
 ### Соседи spine1
 ```
@@ -147,30 +147,30 @@ router bgp 65000
 ```
 ### Вывод маршрутной информации
 ```
-10.10.0.1/32, ubest/mbest: 1/0
-    *via 10.20.2.1, [20/0], 00:16:12, bgp-65000, external, tag 65301
-10.10.0.2/32, ubest/mbest: 1/0
-    *via 10.20.2.3, [20/0], 00:15:55, bgp-65000, external, tag 65302
-10.10.0.3/32, ubest/mbest: 1/0
-    *via 10.20.2.5, [20/0], 00:15:44, bgp-65000, external, tag 65303
 10.10.2.0/32, ubest/mbest: 2/0, attached
-    *via 10.10.2.0, Lo1, [0/0], 04:09:11, local
-    *via 10.10.2.0, Lo1, [0/0], 04:09:11, direct
+    *via 10.10.2.0, Lo1, [0/0], 04:22:21, local
+    *via 10.10.2.0, Lo1, [0/0], 04:22:21, direct
+10.11.0.1/32, ubest/mbest: 1/0
+    *via 10.20.2.1, [20/0], 00:02:22, bgp-65000, external, tag 65301
+10.11.0.2/32, ubest/mbest: 1/0
+    *via 10.20.2.3, [20/0], 00:02:05, bgp-65000, external, tag 65302
+10.11.0.3/32, ubest/mbest: 1/0
+    *via 10.20.2.5, [20/0], 00:01:47, bgp-65000, external, tag 65303
 10.11.2.0/32, ubest/mbest: 2/0, attached
-    *via 10.11.2.0, Lo2, [0/0], 04:09:11, local
-    *via 10.11.2.0, Lo2, [0/0], 04:09:11, direct
+    *via 10.11.2.0, Lo2, [0/0], 04:22:21, local
+    *via 10.11.2.0, Lo2, [0/0], 04:22:21, direct
 10.20.2.0/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.0, Eth1/1, [0/0], 02:06:24, direct
+    *via 10.20.2.0, Eth1/1, [0/0], 02:19:34, direct
 10.20.2.0/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.0, Eth1/1, [0/0], 02:06:24, local
+    *via 10.20.2.0, Eth1/1, [0/0], 02:19:34, local
 10.20.2.2/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.2, Eth1/2, [0/0], 02:06:24, direct
+    *via 10.20.2.2, Eth1/2, [0/0], 02:19:34, direct
 10.20.2.2/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.2, Eth1/2, [0/0], 02:06:24, local
+    *via 10.20.2.2, Eth1/2, [0/0], 02:19:34, local
 10.20.2.4/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.4, Eth1/3, [0/0], 02:06:23, direct
+    *via 10.20.2.4, Eth1/3, [0/0], 02:19:33, direct
 10.20.2.4/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.4, Eth1/3, [0/0], 02:06:23, local
+    *via 10.20.2.4, Eth1/3, [0/0], 02:19:33, local
 ```
 ### Соседи spine2
 ```
@@ -233,29 +233,29 @@ router bgp 65301
 ### Вывод маршрутной информации
 ```
 10.10.0.1/32, ubest/mbest: 2/0, attached
-    *via 10.10.0.1, Lo1, [0/0], 04:06:05, local
-    *via 10.10.0.1, Lo1, [0/0], 04:06:05, direct
-10.10.0.2/32, ubest/mbest: 2/0
-    *via 10.20.1.0, [20/0], 00:15:55, bgp-65301, external, tag 65000
-    *via 10.20.2.0, [20/0], 00:15:55, bgp-65301, external, tag 65000
-10.10.0.3/32, ubest/mbest: 2/0
-    *via 10.20.1.0, [20/0], 00:15:44, bgp-65301, external, tag 65000
-    *via 10.20.2.0, [20/0], 00:15:44, bgp-65301, external, tag 65000
+    *via 10.10.0.1, Lo1, [0/0], 04:19:15, local
+    *via 10.10.0.1, Lo1, [0/0], 04:19:15, direct
 10.10.1.0/32, ubest/mbest: 1/0
-    *via 10.20.1.0, [20/0], 00:16:20, bgp-65301, external, tag 65000
+    *via 10.20.1.0, [20/0], 00:29:30, bgp-65301, external, tag 65000
 10.10.2.0/32, ubest/mbest: 1/0
-    *via 10.20.2.0, [20/0], 00:16:12, bgp-65301, external, tag 65000
+    *via 10.20.2.0, [20/0], 00:29:22, bgp-65301, external, tag 65000
 10.11.0.1/32, ubest/mbest: 2/0, attached
-    *via 10.11.0.1, Lo2, [0/0], 04:06:05, local
-    *via 10.11.0.1, Lo2, [0/0], 04:06:05, direct
+    *via 10.11.0.1, Lo2, [0/0], 04:19:15, local
+    *via 10.11.0.1, Lo2, [0/0], 04:19:15, direct
+10.11.0.2/32, ubest/mbest: 2/0
+    *via 10.20.1.0, [20/0], 00:02:05, bgp-65301, external, tag 65000
+    *via 10.20.2.0, [20/0], 00:02:05, bgp-65301, external, tag 65000
+10.11.0.3/32, ubest/mbest: 2/0
+    *via 10.20.1.0, [20/0], 00:01:47, bgp-65301, external, tag 65000
+    *via 10.20.2.0, [20/0], 00:01:47, bgp-65301, external, tag 65000
 10.20.1.0/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.1, Eth1/1, [0/0], 02:06:11, direct
+    *via 10.20.1.1, Eth1/1, [0/0], 02:19:21, direct
 10.20.1.1/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.1, Eth1/1, [0/0], 02:06:11, local
+    *via 10.20.1.1, Eth1/1, [0/0], 02:19:21, local
 10.20.2.0/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.1, Eth1/2, [0/0], 02:06:11, direct
+    *via 10.20.2.1, Eth1/2, [0/0], 02:19:21, direct
 10.20.2.1/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.1, Eth1/2, [0/0], 02:06:11, local
+    *via 10.20.2.1, Eth1/2, [0/0], 02:19:21, local
 ```  
 ### Соседи leaf1
 ```
@@ -313,30 +313,30 @@ neighbor 10.20.2.2
 ```
 ### Вывод маршрутной информации
 ```
-10.10.0.1/32, ubest/mbest: 2/0
-    *via 10.20.1.2, [20/0], 00:15:55, bgp-65302, external, tag 65000
-    *via 10.20.2.2, [20/0], 00:15:55, bgp-65302, external, tag 65000
 10.10.0.2/32, ubest/mbest: 2/0, attached
-    *via 10.10.0.2, Lo1, [0/0], 04:05:56, local
-    *via 10.10.0.2, Lo1, [0/0], 04:05:56, direct
-10.10.0.3/32, ubest/mbest: 2/0
-    *via 10.20.1.2, [20/0], 00:15:44, bgp-65302, external, tag 65000
-    *via 10.20.2.2, [20/0], 00:15:44, bgp-65302, external, tag 65000
+    *via 10.10.0.2, Lo1, [0/0], 04:19:07, local
+    *via 10.10.0.2, Lo1, [0/0], 04:19:07, direct
 10.10.1.0/32, ubest/mbest: 1/0
-    *via 10.20.1.2, [20/0], 00:15:55, bgp-65302, external, tag 65000
+    *via 10.20.1.2, [20/0], 00:29:06, bgp-65302, external, tag 65000
 10.10.2.0/32, ubest/mbest: 1/0
-    *via 10.20.2.2, [20/0], 00:15:55, bgp-65302, external, tag 65000
+    *via 10.20.2.2, [20/0], 00:29:06, bgp-65302, external, tag 65000
+10.11.0.1/32, ubest/mbest: 2/0
+    *via 10.20.1.2, [20/0], 00:02:23, bgp-65302, external, tag 65000
+    *via 10.20.2.2, [20/0], 00:02:23, bgp-65302, external, tag 65000
 10.11.0.2/32, ubest/mbest: 2/0, attached
-    *via 10.11.0.2, Lo2, [0/0], 04:05:56, local
-    *via 10.11.0.2, Lo2, [0/0], 04:05:56, direct
+    *via 10.11.0.2, Lo2, [0/0], 04:19:07, local
+    *via 10.11.0.2, Lo2, [0/0], 04:19:07, direct
+10.11.0.3/32, ubest/mbest: 2/0
+    *via 10.20.1.2, [20/0], 00:01:47, bgp-65302, external, tag 65000
+    *via 10.20.2.2, [20/0], 00:01:47, bgp-65302, external, tag 65000
 10.20.1.2/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.3, Eth1/1, [0/0], 02:06:01, direct
+    *via 10.20.1.3, Eth1/1, [0/0], 02:19:12, direct
 10.20.1.3/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.3, Eth1/1, [0/0], 02:06:01, local
+    *via 10.20.1.3, Eth1/1, [0/0], 02:19:12, local
 10.20.2.2/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.3, Eth1/2, [0/0], 02:06:00, direct
+    *via 10.20.2.3, Eth1/2, [0/0], 02:19:11, direct
 10.20.2.3/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.3, Eth1/2, [0/0], 02:06:00, local
+    *via 10.20.2.3, Eth1/2, [0/0], 02:19:11, local
 ```  
 ### Соседи leaf2
 ```
@@ -394,31 +394,30 @@ router bgp 65303
 ```
 ### Вывод маршрутной информации
 ```
-10.10.0.1/32, ubest/mbest: 2/0
-    *via 10.20.1.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
-    *via 10.20.2.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
-10.10.0.2/32, ubest/mbest: 2/0
-    *via 10.20.1.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
-    *via 10.20.2.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
 10.10.0.3/32, ubest/mbest: 2/0, attached
-    *via 10.10.0.3, Lo1, [0/0], 04:05:43, local
-    *via 10.10.0.3, Lo1, [0/0], 04:05:43, direct
+    *via 10.10.0.3, Lo1, [0/0], 04:18:53, local
+    *via 10.10.0.3, Lo1, [0/0], 04:18:53, direct
 10.10.1.0/32, ubest/mbest: 1/0
-    *via 10.20.1.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
+    *via 10.20.1.4, [20/0], 00:28:55, bgp-65303, external, tag 65000
 10.10.2.0/32, ubest/mbest: 1/0
-    *via 10.20.2.4, [20/0], 00:15:45, bgp-65303, external, tag 65000
+    *via 10.20.2.4, [20/0], 00:28:55, bgp-65303, external, tag 65000
+10.11.0.1/32, ubest/mbest: 2/0
+    *via 10.20.1.4, [20/0], 00:02:23, bgp-65303, external, tag 65000
+    *via 10.20.2.4, [20/0], 00:02:23, bgp-65303, external, tag 65000
+10.11.0.2/32, ubest/mbest: 2/0
+    *via 10.20.1.4, [20/0], 00:02:05, bgp-65303, external, tag 65000
+    *via 10.20.2.4, [20/0], 00:02:05, bgp-65303, external, tag 65000
 10.11.0.3/32, ubest/mbest: 2/0, attached
-    *via 10.11.0.3, Lo2, [0/0], 04:05:43, local
-    *via 10.11.0.3, Lo2, [0/0], 04:05:43, direct
+    *via 10.11.0.3, Lo2, [0/0], 04:18:53, local
+    *via 10.11.0.3, Lo2, [0/0], 04:18:53, direct
 10.20.1.4/31, ubest/mbest: 1/0, attached
-    *via 10.20.1.5, Eth1/1, [0/0], 02:05:53, direct
+    *via 10.20.1.5, Eth1/1, [0/0], 02:19:03, direct
 10.20.1.5/32, ubest/mbest: 1/0, attached
-    *via 10.20.1.5, Eth1/1, [0/0], 02:05:53, local
+    *via 10.20.1.5, Eth1/1, [0/0], 02:19:03, local
 10.20.2.4/31, ubest/mbest: 1/0, attached
-    *via 10.20.2.5, Eth1/2, [0/0], 02:05:52, direct
+    *via 10.20.2.5, Eth1/2, [0/0], 02:19:02, direct
 10.20.2.5/32, ubest/mbest: 1/0, attached
-    *via 10.20.2.5, Eth1/2, [0/0], 02:05:52, local
-
+    *via 10.20.2.5, Eth1/2, [0/0], 02:19:02, local
 ```  
 ### Соседи leaf3
 ```
