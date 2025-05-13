@@ -60,7 +60,7 @@ router bgp 65000
  address-family l2vpn evpn
   maximum-paths 10
   retain route-target all
- neighbor 10.0.0.0/24 remote-as route-map leaf-ases
+ neighbor 10.10.0.0/24 remote-as route-map leaf-ases
   remote-as external
   update-source loopback0
   ebgp-multihop 5
@@ -171,7 +171,7 @@ router bgp 65000
  address-family l2vpn evpn
   maximum-paths 10
   retain route-target all
- neighbor 10.0.0.0/24 remote-as route-map leaf-ases
+ neighbor 10.10.0.0/24 remote-as route-map leaf-ases
   remote-as external
   update-source loopback0
   ebgp-multihop 5
