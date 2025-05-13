@@ -631,3 +631,6 @@ PfxRcd
   </p>
 </details>
 
+### Результат
+
+![icmp.png](icmp.png)
