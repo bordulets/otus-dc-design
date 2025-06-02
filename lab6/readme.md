@@ -1169,6 +1169,20 @@ G    2     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G   10     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G   20     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 ```
+### ARP Suppression
+```
+leaf3#  sh ip arp suppression-cache l
+
+Flags: + - Adjacencies synced via CFSoE
+       L - Local Adjacency
+       R - Remote Adjacency
+       L2 - Learnt over L2 interface
+
+Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
+
+192.168.10.13   00:08:17 0050.0000.0800   10 Ethernet1/6         L
+192.168.20.12   00:08:35 0050.0000.0900   20 Ethernet1/7         L
+```
 </p>
 </details>
 
