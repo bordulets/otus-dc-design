@@ -108,21 +108,11 @@ router bgp 65000
 10.20.1.4/32, ubest/mbest: 1/0, attached
     *via 10.20.1.4, Eth1/3, [0/0], 00:41:40, local
 ```
-### Соседи spine1
-```
-Neighbor        V    AS    MsgRcvd    MsgSent   TblVer  InQ OutQ Up/Down  State/
-PfxRcd
-10.20.1.1       4 65301        903        896       34    0    0 00:37:41 2     
-    
-10.20.1.3       4 65302        733        731       34    0    0 00:30:56 2     
-    
-10.20.1.5       4 65303       1028       1024       34    0    0 00:34:19 2 
-```
 ### L2VPN EVPN
 ```
-spine1# show bgp l2vpn evpn
+spine1#  show bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 252, Local Router ID is 10.10.1.0
+BGP table version is 257, Local Router ID is 10.10.1.0
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
 njected
@@ -157,14 +147,16 @@ Route Distinguisher: 10.10.0.2:32787
 Route Distinguisher: 10.10.0.3:32777
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65303 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65303 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
                       10.10.0.3                                      0 65303 i
 *>e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65303 i
 
 Route Distinguisher: 10.10.0.3:32787
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65303 i
 *>e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65303 i
 ```
@@ -272,21 +264,11 @@ router bgp 65000
 10.20.2.4/32, ubest/mbest: 1/0, attached
     *via 10.20.2.4, Eth1/3, [0/0], 00:40:31, local
 ```
-### Соседи spine2
-```
-Neighbor        V    AS    MsgRcvd    MsgSent   TblVer  InQ OutQ Up/Down  State/
-PfxRcd
-10.20.2.1       4 65301        848        842       34    0    0 00:37:52 2     
-    
-10.20.2.3       4 65302        737        735       34    0    0 00:31:05 2     
-    
-10.20.2.5       4 65303        962        957       34    0    0 00:34:30 2      
-```
 ### L2VPN EVPN
 ```
 spine2# show bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 261, Local Router ID is 10.10.2.0
+BGP table version is 266, Local Router ID is 10.10.2.0
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
 njected
@@ -321,14 +303,16 @@ Route Distinguisher: 10.10.0.2:32787
 Route Distinguisher: 10.10.0.3:32777
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65303 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65303 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
                       10.10.0.3                                      0 65303 i
 *>e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65303 i
 
 Route Distinguisher: 10.10.0.3:32787
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65303 i
 *>e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65303 i
 ```
@@ -505,20 +489,12 @@ evpn
     *via 10.20.2.1, Eth1/2, [0/0], 3w5d, direct
 10.20.2.1/32, ubest/mbest: 1/0, attached
     *via 10.20.2.1, Eth1/2, [0/0], 3w5d, local
-```  
-### Соседи leaf1
-```
-Neighbor        V    AS    MsgRcvd    MsgSent   TblVer  InQ OutQ Up/Down  State/
-PfxRcd
-10.20.1.0       4 65000        787        779       30    0    0 00:38:45 6     
-    
-10.20.2.0       4 65000        787        779       30    0    0 00:38:46 6 
 ```
 ### L2VPN EVPN
 ```
 leaf1# show bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 671, Local Router ID is 10.10.0.1
+BGP table version is 684, Local Router ID is 10.10.0.1
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
 njected
@@ -532,8 +508,6 @@ Route Distinguisher: 10.10.0.1:32777    (L2VNI 10010)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[0]:[0.0.0.0]/216
                       10.10.0.2                                      0 65000 65302 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65000 65303 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65000 65303 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0600]:[32]:[192.168.10.11]/272
                       10.10.0.1                         100      32768 i
@@ -549,6 +523,10 @@ Route Distinguisher: 10.10.0.1:32777    (L2VNI 10010)
                       10.10.0.3                                      0 65000 65303 i
 
 Route Distinguisher: 10.10.0.1:32787    (L2VNI 10020)
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65000 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65000 65303 i
 *>l[3]:[0]:[32]:[10.10.0.1]/88
                       10.10.0.1                         100      32768 i
 *>e[3]:[0]:[32]:[10.10.0.2]/88
@@ -576,9 +554,6 @@ Route Distinguisher: 10.10.0.3:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65000 65303 i
-*>e                   10.10.0.3                                      0 65000 65303 i
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
@@ -587,6 +562,12 @@ Route Distinguisher: 10.10.0.3:32777
 *>e                   10.10.0.3                                      0 65000 65303 i
 
 Route Distinguisher: 10.10.0.3:32787
+* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65000 65303 i
+*>e                   10.10.0.3                                      0 65000 65303 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65000 65303 i
+*>e                   10.10.0.3                                      0 65000 65303 i
 * e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
@@ -595,6 +576,8 @@ Route Distinguisher: 10.10.0.1:4    (L3VNI 5000)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.10.12]/272
                       10.10.0.2                                      0 65000 65302 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.10.0.3                                      0 65000 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
                       10.10.0.3                                      0 65000 65303 i
 ```
 ### MAC-address table
@@ -793,20 +776,12 @@ evpn
     *via 10.20.2.3, Eth1/2, [0/0], 3w5d, direct
 10.20.2.3/32, ubest/mbest: 1/0, attached
     *via 10.20.2.3, Eth1/2, [0/0], 3w5d, local
-```  
-### Соседи leaf2
-```
-Neighbor        V    AS    MsgRcvd    MsgSent   TblVer  InQ OutQ Up/Down  State/
-PfxRcd
-10.20.1.2       4 65000        647        643       21    0    0 00:32:00 6     
-    
-10.20.2.2       4 65000        647        644       21    0    0 00:31:59 6    
 ```
 ### L2VPN EVPN
 ```
 leaf2# show bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 639, Local Router ID is 10.10.0.2
+BGP table version is 657, Local Router ID is 10.10.0.2
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
 njected
@@ -837,8 +812,6 @@ Route Distinguisher: 10.10.0.2:32777    (L2VNI 10010)
                       10.10.0.2                         100      32768 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65000 65303 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65000 65303 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0600]:[32]:[192.168.10.11]/272
                       10.10.0.1                                      0 65000 65301 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.10.12]/272
@@ -853,6 +826,10 @@ Route Distinguisher: 10.10.0.2:32777    (L2VNI 10010)
                       10.10.0.3                                      0 65000 65303 i
 
 Route Distinguisher: 10.10.0.2:32787    (L2VNI 10020)
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65000 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65000 65303 i
 *>e[3]:[0]:[32]:[10.10.0.1]/88
                       10.10.0.1                                      0 65000 65301 i
 *>l[3]:[0]:[32]:[10.10.0.2]/88
@@ -864,9 +841,6 @@ Route Distinguisher: 10.10.0.3:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                                      0 65000 65303 i
-*>e                   10.10.0.3                                      0 65000 65303 i
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
@@ -875,6 +849,12 @@ Route Distinguisher: 10.10.0.3:32777
 *>e                   10.10.0.3                                      0 65000 65303 i
 
 Route Distinguisher: 10.10.0.3:32787
+* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                                      0 65000 65303 i
+*>e                   10.10.0.3                                      0 65000 65303 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65000 65303 i
+*>e                   10.10.0.3                                      0 65000 65303 i
 * e[3]:[0]:[32]:[10.10.0.3]/88
                       10.10.0.3                                      0 65000 65303 i
 *>e                   10.10.0.3                                      0 65000 65303 i
@@ -884,10 +864,12 @@ Route Distinguisher: 10.10.0.2:4    (L3VNI 5000)
                       10.10.0.1                                      0 65000 65301 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
                       10.10.0.3                                      0 65000 65303 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                                      0 65000 65303 i
 ```
 ### MAC-address table
 ```
-leaf2#  sh mac address-t
+leaf2# show mac address-table 
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -898,10 +880,10 @@ Legend:
 *    2     5003.0000.1b08   static   -         F      F    nve1(10.10.0.1)
 *    2     5004.0000.1b08   static   -         F      F    Vlan2
 *    2     5005.0000.1b08   static   -         F      F    nve1(10.10.0.3)
-C   10     0050.0000.0600   dynamic  NA        F      F    nve1(10.10.0.1)
-*   10     0050.0000.0700   dynamic  NA        F      F    Eth1/6
-C   10     0050.0000.0800   dynamic  NA        F      F    nve1(10.10.0.3)
-C   10     0050.0000.0900   dynamic  NA        F      F    nve1(10.10.0.3)
+C   10     0050.0000.0600   dynamic  NA         F      F    nve1(10.10.0.1)
+*   10     0050.0000.0700   dynamic  NA         F      F    Eth1/6
+C   10     0050.0000.0800   dynamic  NA         F      F    nve1(10.10.0.3)
+C   20     0050.0000.0900   dynamic  NA         F      F    nve1(10.10.0.3)
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     5004.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5004.0000.1b08   static   -         F      F    sup-eth1(R)
@@ -1002,7 +984,7 @@ interface Ethernet1/6
   switchport access vlan 10
 
 interface Ethernet1/7
-  switchport access vlan 10
+  switchport access vlan 20
 
 interface loopback0
  ip address 10.10.0.3/32
@@ -1081,20 +1063,12 @@ evpn
     *via 10.20.2.5, Eth1/2, [0/0], 3w5d, direct
 10.20.2.5/32, ubest/mbest: 1/0, attached
     *via 10.20.2.5, Eth1/2, [0/0], 3w5d, local
-```  
-### Соседи leaf3
-```
-Neighbor        V    AS    MsgRcvd    MsgSent   TblVer  InQ OutQ Up/Down  State/
-PfxRcd
-10.20.1.4       4 65000        716        711       27    0    0 00:35:22 6     
-    
-10.20.2.4       4 65000        715        711       27    0    0 00:35:24 6   
 ```
 ### L2VPN EVPN
 ```
 leaf3# show bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 343, Local Router ID is 10.10.0.3
+BGP table version is 348, Local Router ID is 10.10.0.3
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
 njected
@@ -1141,8 +1115,6 @@ Route Distinguisher: 10.10.0.3:32777    (L2VNI 10010)
                       10.10.0.2                                      0 65000 65302 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.10.0.3                         100      32768 i
-*>l[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
-                      10.10.0.3                         100      32768 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0600]:[32]:[192.168.10.11]/272
                       10.10.0.1                                      0 65000 65301 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.10.12]/272
@@ -1157,6 +1129,10 @@ Route Distinguisher: 10.10.0.3:32777    (L2VNI 10010)
                       10.10.0.3                         100      32768 i
 
 Route Distinguisher: 10.10.0.3:32787    (L2VNI 10020)
+*>l[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
+                      10.10.0.3                         100      32768 i
+*>l[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.20.12]/272
+                      10.10.0.3                         100      32768 i
 *>e[3]:[0]:[32]:[10.10.0.1]/88
                       10.10.0.1                                      0 65000 65301 i
 *>e[3]:[0]:[32]:[10.10.0.2]/88
@@ -1172,7 +1148,7 @@ Route Distinguisher: 10.10.0.3:4    (L3VNI 5000)
 ```
 ### MAC-address table
 ```
-leaf3#       sh mac address-t
+leaf3# show mac address-table 
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -1183,10 +1159,10 @@ Legend:
 *    2     5003.0000.1b08   static   -         F      F    nve1(10.10.0.1)
 *    2     5004.0000.1b08   static   -         F      F    nve1(10.10.0.2)
 *    2     5005.0000.1b08   static   -         F      F    Vlan2
-C   10     0050.0000.0600   dynamic  NA        F      F    nve1(10.10.0.1)
-C   10     0050.0000.0700   dynamic  NA        F      F    nve1(10.10.0.2)
-*   10     0050.0000.0800   dynamic  NA        F      F    Eth1/6
-*   10     0050.0000.0900   dynamic  NA        F      F    Eth1/7
+C   10     0050.0000.0600   dynamic  NA         F      F    nve1(10.10.0.1)
+C   10     0050.0000.0700   dynamic  NA         F      F    nve1(10.10.0.2)
+*   10     0050.0000.0800   dynamic  NA         F      F    Eth1/6
+*   20     0050.0000.0900   dynamic  NA         F      F    Eth1/7
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5005.0000.1b08   static   -         F      F    sup-eth1(R)
@@ -1198,7 +1174,4 @@ G   20     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 
 ### Результаты
 
-![2025-06-02_22-35-38.png](2025-06-02_22-35-38.png)
-![2025-06-02_22-36-20.png](2025-06-02_22-36-20.png)
-![2025-06-02_22-37-08.png](2025-06-02_22-37-08.png)
-![2025-06-02_22-37-51.png](2025-06-02_22-37-51.png)
+![2025-06-02_22-54-24.png](2025-06-02_22-54-24.png)
