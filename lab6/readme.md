@@ -1171,7 +1171,7 @@ G   20     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 ```
 ### ARP Suppression
 ```
-leaf3#  sh ip arp suppression-cache l
+leaf3#  sh ip arp suppression-cache local
 
 Flags: + - Adjacencies synced via CFSoE
        L - Local Adjacency
@@ -1182,6 +1182,24 @@ Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
 
 192.168.10.13   00:08:17 0050.0000.0800   10 Ethernet1/6         L
 192.168.20.12   00:08:35 0050.0000.0900   20 Ethernet1/7         L
+
+leaf3# sh ip arp suppression-cache remote 
+
+Flags: + - Adjacencies synced via CFSoE
+       L - Local Adjacency
+       R - Remote Adjacency
+       L2 - Learnt over L2 interface
+       PS - Added via L2RIB, Peer Sync
+       RO - Dervied from L2RIB Peer Sync Entry
+
+Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags    Remote
+ Vtep Addrs
+
+192.168.10.12       2w0d 0050.0000.0700   10 (null)              R        10.10.
+0.2   
+192.168.10.11       2w6d 0050.0000.0600   10 (null)              R        10.10.
+0.1   
+
 ```
 </p>
 </details>
