@@ -3061,7 +3061,7 @@ Group  Port-channel  Protocol    Ports
 
 ## ICMP
 
-### С этим есть проблема. Скорее всего не работает virtual peer-link. Ну или кривые руки, очень хотелось бы разобраться.
+### С этим есть проблема. Скорее всего не работает virtual peer-link, на железе добились, что это работает
 
 <details>
   <summary><b>PC-1</b></summary>

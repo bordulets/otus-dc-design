@@ -3718,7 +3718,7 @@ Group  Port-channel  Protocol    Ports
 
 ## ICMP
 
-### Опытным путем было установлено, что при наличии VPC трафик нормально не ходит. Нельзя перераспределить TCAM в сторону  hardware access-list tcam region ing-flow-redirect 512 что пускать трафик через SPAINE в vpc паре. На железе все красиво.
+### Путем проб и ошибок выяснилось, что при VPC в схеме трафик ходит некорректно. В лабе нльзя перераспределить TCAM в сторону hardware access-list tcam region ing-flow-redirect 512, чтобы пустить трафик через спайн в vpc паре. На железных нексусах всё ок.
 
 <details>
   <summary><b>PC-1</b></summary>
