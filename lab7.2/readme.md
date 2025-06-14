@@ -185,6 +185,7 @@ Route Distinguisher: 10.10.0.3:32787
 ```
 nv overlay evpn
 feature bgp
+feature pim
 
 route-map leaf-ases permit 10
  match as-number 65301-65399 
