@@ -1,148 +1,16 @@
-# Домашние задание 8
-## VxLAN. Оптимизация таблиц маршрутизации
+# Домашние задание 7
+## VxLAN. VPC
 
 ### Схема сети
 
 ![схема.png](Схема.png)
 
 ### AS выбран по принципу:
-   - 49900 - R1
    - 65000 - спайны
    - 65501-65536 - лифы
 
 ## Конфигурация и таблица маршрутизации
-<details>
-  <summary><b>R1</b></summary>
-  <p>
- 
-```
-R1#sh run 
-*Apr 30 18:40:55.616: %SYS-5-CONFIG_I: Configured from console by console
-Building configuration...
 
-Current configuration : 1304 bytes
-!
-! Last configuration change at 18:40:55 UTC Wed Apr 30 2025
-!
-version 15.9
-service timestamps debug datetime msec
-service timestamps log datetime msec
-no service password-encryption
-!
-hostname R1
-!
-boot-start-marker
-boot-end-marker
-!
-!
-!
-no aaa new-model
-!
-!
-!
-mmi polling-interval 60
-no mmi auto-configure
-no mmi pvc
-mmi snmp-timeout 180
-!
-
-ip cef
-no ipv6 cef
-!
-multilink bundle-name authenticated
-!
-!
-!
-redundancy
-!
-!
-!
-interface GigabitEthernet0/0
- mac-address 1212.1212.1212
- ip address 192.168.70.3 255.255.255.0
- duplex auto
- speed auto
- media-type rj45
-!
-interface GigabitEthernet0/1
- mac-address 1212.1212.1213
- ip address 192.168.80.3 255.255.255.0
- duplex auto
- speed auto
- media-type rj45
-!
-interface GigabitEthernet0/2
- no ip address
- shutdown
- duplex auto
- speed auto
- media-type rj45
-!
-interface GigabitEthernet0/3
- no ip address
- shutdown
- duplex auto
- speed auto
- media-type rj45
-!
-router bgp 49900
- bgp log-neighbor-changes
- neighbor 192.168.70.1 remote-as 65503
- neighbor 192.168.70.1 as-override
- neighbor 192.168.80.1 remote-as 65503
- neighbor 192.168.80.1 as-override
-!
-ip forward-protocol nd
-!
-!
-no ip http server
-!
-ipv6 ioam timestamp
-!
-!         
-!
-control-plane
-!
-!
-line con 0
-line aux 0
-line vty 0 4
- login
- transport input none
-!
-no scheduler allocate
-!
-end
-```
-### Вывод Маршрутной информации
-```
-SW2#sh mac address-t
- sh ip route bgp
-Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
-       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
-       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
-       E1 - OSPF external type 1, E2 - OSPF external type 2
-       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
-       ia - IS-IS inter area, * - candidate default, U - per-user static route
-       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
-       a - application route
-       + - replicated route, % - next hop override, p - overrides from PfR
-
-Gateway of last resort is not set
-
-      192.168.10.0/24 is variably subnetted, 3 subnets, 2 masks
-B        192.168.10.0/24 [20/0] via 192.168.70.1, 01:54:27
-B        192.168.10.11/32 [20/0] via 192.168.70.1, 01:52:24
-B        192.168.10.30/32 [20/0] via 192.168.70.1, 01:52:24
-      192.168.20.0/24 is variably subnetted, 2 subnets, 2 masks
-B        192.168.20.0/24 [20/0] via 192.168.70.1, 01:54:27
-B        192.168.20.12/32 [20/0] via 192.168.70.1, 01:52:24
-      192.168.30.0/24 is variably subnetted, 2 subnets, 2 masks
-B        192.168.30.0/24 [20/0] via 192.168.80.1, 01:54:27
-B        192.168.30.30/32 [20/0] via 192.168.80.1, 01:51:22
-```
-  </p>
-</details>
 <details>
   <summary><b> Spine-1 </b></summary>
   <p> 
@@ -655,31 +523,19 @@ hardware access-list tcam region racl 512
 hardware access-list tcam region arp-ether 256 double-wide
 
 fabric forwarding anycast-gateway-mac 0000.0000.0001
-vlan 1-3,10,20,30
+vlan 1-2,10,20
 vlan 2
   name VxLan_L3
   vn-segment 5000
-vlan 3
-  vn-segment 6000
 vlan 10
   name Vlan_10
   vn-segment 10010
 vlan 20
   name Vlan_20
   vn-segment 10020
-vlan 30
-  name Vlan_30
-  vn-segment 10030
 
-route-map PERMIT permit 10
 route-map redis permit 10
   match interface loopback1 loopback2 
-vrf context VXL
-  vni 6000
-  rd auto
-  address-family ipv4 unicast
-    route-target both auto
-    route-target both auto evpn
 vrf context VXLAN
   vni 5000
   rd auto
@@ -687,6 +543,7 @@ vrf context VXLAN
     route-target both auto
     route-target both auto evpn
 vrf context management
+
 vpc domain 1
   peer-switch
   role priority 100
@@ -700,18 +557,14 @@ vpc domain 1
   fast-convergence
   ip arp synchronize
 
+interface Vlan1
+  no ip redirects
+  no ipv6 redirects
+
 interface Vlan2
   description VxLan_L3
   no shutdown
   vrf member VXLAN
-  no ip redirects
-  ip forward
-  no ipv6 redirects
-
-interface Vlan3
-  description VxL_L3
-  no shutdown
-  vrf member VXL
   no ip redirects
   ip forward
   no ipv6 redirects
@@ -732,14 +585,6 @@ interface Vlan20
   no ipv6 redirects
   fabric forwarding mode anycast-gateway
 
-interface Vlan30
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.30.1/24
-  no ipv6 redirects
-  fabric forwarding mode anycast-gateway
-
 interface port-channel6
   switchport mode trunk
   vpc 6
@@ -757,10 +602,8 @@ interface nve1
   global suppress-arp
   global ingress-replication protocol bgp
   member vni 5000 associate-vrf
-  member vni 6000 associate-vrf
   member vni 10010
   member vni 10020
-  member vni 10030
 
 interface Ethernet1/1
   description to Spine-1
@@ -833,69 +676,98 @@ router bgp 65501
 ```
 ### Вывод маршрутной информации
 ```
-sh ip bgp all
-BGP routing table information for VRF default, address family IPv4 Unicast
-BGP table version is 131, Local Router ID is 10.0.0.1
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
+Leaf-1# sh ip route
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-   Network            Next Hop            Metric     LocPrf     Weight Path
-*>r10.0.0.1/32        0.0.0.0                  0        100      32768 ?
-*|e10.0.0.2/32        10.2.2.0                                       0 65000 65502 ?
-*>e                   10.2.1.0                                       0 65000 65502 ?
-*|e10.0.0.3/32        10.2.1.0                                       0 65000 65503 ?
-*>e                   10.2.2.0                                       0 65000 65503 ?
-*|e10.0.0.4/32        10.2.1.0                                       0 65000 65504 ?
-*>e                   10.2.2.0                                       0 65000 65504 ?
-*|e10.0.0.253/32      10.2.1.0                                       0 65000 65504 ?
-*>e                   10.2.2.0                                       0 65000 65504 ?
-*>r10.0.0.254/32      0.0.0.0                  0        100      32768 ?
-*>e10.0.1.0/32        10.2.1.0                 0                     0 65000 ?
-*>e10.0.2.0/32        10.2.2.0                 0                     0 65000 ?
-*>r10.1.0.1/32        0.0.0.0                  0        100      32768 ?
-*|e10.1.0.2/32        10.2.2.0                                       0 65000 65502 ?
-*>e                   10.2.1.0                                       0 65000 65502 ?
-*|e10.1.0.3/32        10.2.2.0                                       0 65000 65503 ?
-*>e                   10.2.1.0                                       0 65000 65503 ?
-*|e10.1.0.4/32        10.2.2.0                                       0 65000 65504 ?
-*>e                   10.2.1.0                                       0 65000 65504 ?
-*>e10.1.1.0/32        10.2.1.0                 0                     0 65000 ?
-*>e10.1.2.0/32        10.2.2.0                 0                     0 65000 ?
+10.0.0.1/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.1, Lo1, [0/0], 02:30:45, local
+    *via 10.0.0.1, Lo1, [0/0], 02:30:45, direct
+10.0.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 02:30:45, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 02:30:45, bgp-65501, external, tag 65000
+10.0.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 01:56:18, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 01:56:18, bgp-65501, external, tag 65000
+10.0.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 01:56:43, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 01:56:43, bgp-65501, external, tag 65000
+10.0.0.253/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 01:56:43, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 01:56:43, bgp-65501, external, tag 65000
+10.0.0.254/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.254, Lo1, [0/0], 02:30:45, local
+    *via 10.0.0.254, Lo1, [0/0], 02:30:45, direct
+10.0.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.0.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.1.0.1/32, ubest/mbest: 2/0, attached
+    *via 10.1.0.1, Lo2, [0/0], 02:35:27, local
+    *via 10.1.0.1, Lo2, [0/0], 02:35:27, direct
+10.1.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.1.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 02:33:57, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 02:33:57, bgp-65501, external, tag 65000
+10.1.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+    *via 10.2.2.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.1.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.1.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.0, [20/0], 02:33:58, bgp-65501, external, tag 65000
+10.2.1.0/31, ubest/mbest: 1/0, attached
+    *via 10.2.1.1, Eth1/1, [0/0], 02:34:10, direct
+10.2.1.1/32, ubest/mbest: 1/0, attached
+    *via 10.2.1.1, Eth1/1, [0/0], 02:34:10, local
+10.2.2.0/31, ubest/mbest: 1/0, attached
+    *via 10.2.2.1, Eth1/2, [0/0], 02:34:10, direct
+10.2.2.1/32, ubest/mbest: 1/0, attached
+    *via 10.2.2.1, Eth1/2, [0/0], 02:34:10, local
+```
+### Вывод маршрутной информации vrf
+```
+Leaf-1# sh ip route vrf vxlan
+IP Route Table for VRF "VXLAN"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-BGP routing table information for VRF default, address family VPNv4 Unicast
-BGP table version is 151, Local Router ID is 10.0.0.1
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
-
-   Network            Next Hop            Metric     LocPrf     Weight Path
-Route Distinguisher: 10.0.0.1:4    (VRF VXLAN)
-* e192.168.10.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e192.168.20.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.20.12/32   10.0.0.2                                       0 65000 65502 i
-*>e192.168.30.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.30.30/32   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.70.0/24    10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.80.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-
-Route Distinguisher: 10.0.0.1:5    (VRF VXL)
-*>e192.168.10.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.20.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.30.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e192.168.30.30/32   10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.70.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.80.0/24    10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-
+192.168.10.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:33:47, direct
+192.168.10.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:33:47, local
+192.168.10.11/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.11, Vlan10, [190/0], 00:04:24, hmm
+192.168.10.13/32, ubest/mbest: 1/0
+    *via 10.0.0.3%default, [20/0], 01:51:43, bgp-65501, external, tag 65000, segid: 5000 tunnelid: 0xa000003 encap: VXLAN
+ 
+192.168.10.14/32, ubest/mbest: 1/0
+    *via 10.0.0.4%default, [20/0], 01:47:17, bgp-65501, external, tag 65000, segid: 5000 tunnelid: 0xa000004 encap: VXLAN
+ 
+192.168.10.30/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.30, Vlan10, [190/0], 00:03:26, hmm
+192.168.20.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:33:47, direct
+192.168.20.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:33:47, local
+192.168.20.12/32, ubest/mbest: 1/0
+    *via 10.0.0.2%default, [20/0], 01:47:44, bgp-65501, external, tag 65000, segid: 5000 tunnelid: 0xa000002 encap: VXLAN
+ 
+192.168.20.30/32, ubest/mbest: 1/0
+    *via 10.0.0.253%default, [20/0], 01:54:14, bgp-65501, external, tag 65000, segid: 5000 tunnelid: 0xa0000fd encap: VXLAN
+```
+### Вывод l2vpn evpn
+```
+Leaf-1# sh bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 12376, Local Router ID is 10.0.0.1
+BGP table version is 219, Local Router ID is 10.0.0.1
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
 Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
@@ -918,6 +790,10 @@ Route Distinguisher: 10.0.0.1:32777    (L2VNI 10010)
                       10.0.0.253                                     0 65000 65504 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0100]:[32]:[192.168.10.11]/272
                       10.0.0.1                          100      32768 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
                       10.0.0.254                        100      32768 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
@@ -929,21 +805,6 @@ Route Distinguisher: 10.0.0.1:32777    (L2VNI 10010)
 Route Distinguisher: 10.0.0.1:32787    (L2VNI 10020)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[0]:[0.0.0.0]/216
                       10.0.0.2                                       0 65000 65502 i
-*>l[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
-                      10.0.0.2                                       0 65000 65502 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-*>l[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                        100      32768 i
-
-Route Distinguisher: 10.0.0.1:32797    (L2VNI 10030)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 * e                   10.0.0.253                                     0 65000 65504 i
@@ -953,9 +814,11 @@ Route Distinguisher: 10.0.0.1:32797    (L2VNI 10030)
                       10.0.0.253                                     0 65000 65503 i
 *>e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
+                      10.0.0.2                                       0 65000 65502 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
+                      10.0.0.253                                     0 65000 65503 i
+*>e                   10.0.0.253                                     0 65000 65504 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65504 i
@@ -974,47 +837,6 @@ Route Distinguisher: 10.0.0.3:4
 * e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-
-Route Distinguisher: 10.0.0.3:5
-* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
 
 Route Distinguisher: 10.0.0.3:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
@@ -1023,28 +845,23 @@ Route Distinguisher: 10.0.0.3:32777
 * e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e                   10.0.0.3                                       0 65000 65503 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
 
 Route Distinguisher: 10.0.0.3:32787
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+                      10.0.0.253                                     0 65000 65503 i
+* e                   10.0.0.253                                     0 65000 65503 i
 * e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-
-Route Distinguisher: 10.0.0.3:32797
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
+* e                   10.0.0.253                                     0 65000 65503 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
@@ -1053,26 +870,6 @@ Route Distinguisher: 10.0.0.4:4
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-
-Route Distinguisher: 10.0.0.4:5
-* e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
 
 Route Distinguisher: 10.0.0.4:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
@@ -1081,28 +878,23 @@ Route Distinguisher: 10.0.0.4:32777
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
+* e                   10.0.0.4                                       0 65000 65504 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
 
 Route Distinguisher: 10.0.0.4:32787
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+                      10.0.0.253                                     0 65000 65504 i
+*>e                   10.0.0.253                                     0 65000 65504 i
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-
-Route Distinguisher: 10.0.0.4:32797
-*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65504 i
 * e                   10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
@@ -1116,50 +908,17 @@ Route Distinguisher: 10.0.0.1:4    (L3VNI 5000)
                       10.0.0.253                                     0 65000 65504 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
                       10.0.0.2                                       0 65000 65502 i
-*|e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*|e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-
-Route Distinguisher: 10.0.0.1:5    (L3VNI 6000)
-*>l[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65503 i
-*>e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
+*>e                   10.0.0.253                                     0 65000 65504 i
 ```
 ### Вывод MAC таблицы
 ```
-Leaf-1# sh mac address-t
+Leaf-1#  sh mac address-t
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -1172,29 +931,20 @@ Legend:
 *    2     5004.0000.1b08   static   -         F      F    Vlan2
 *    2     5006.0000.1b08   static   -         F      F    nve1(10.0.0.3)
 *    2     500a.0000.1b08   static   -         F      F    nve1(10.0.0.4)
-*    3     0200.0a00.00fd   static   -         F      F    nve1(10.0.0.253)
-*    3     0200.0a00.00fe   static   -         F      F    Vlan3
-*    3     5004.0000.1b08   static   -         F      F    Vlan3
-*    3     5006.0000.1b08   static   -         F      F    nve1(10.0.0.3)
-*    3     500a.0000.1b08   static   -         F      F    nve1(10.0.0.4)
 *   10     0050.0000.0100   dynamic  NA         F      F    Eth1/7
 C   10     0050.0000.0800   dynamic  NA         F      F    nve1(10.0.0.3)
 C   10     0050.0000.0900   dynamic  NA         F      F    nve1(10.0.0.4)
 *   10     0050.0000.0d00   dynamic  NA         F      F    Po6
-C   30     0050.0000.0f00   dynamic  NA         F      F    nve1(10.0.0.253)
+C   20     0050.0000.0f00   dynamic  NA         F      F    nve1(10.0.0.253)
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     0200.0a00.00fe   static   -         F      F    sup-eth1(R)
 G    -     5004.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5004.0000.1b08   static   -         F      F    sup-eth1(R)
-G    3     5004.0000.1b08   static   -         F      F    sup-eth1(R)
 G   10     5004.0000.1b08   static   -         F      F    sup-eth1(R)
 G   20     5004.0000.1b08   static   -         F      F    sup-eth1(R)
-G   30     5004.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5005.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G    3     5005.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   10     5005.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   20     5005.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   30     5005.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 ```
 ### Вывод arp suppression
 ```
@@ -1207,8 +957,9 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
 
-192.168.10.11   00:00:04 0050.0000.0100   10 Ethernet1/7         L
-192.168.10.30   00:02:36 0050.0000.0d00   10 port-channel6       L
+192.168.10.11   00:17:15 0050.0000.0100   10 Ethernet1/7         L
+192.168.10.30   00:00:33 0050.0000.0d00   10 port-channel6       L
+
 Leaf-1# sh ip arp suppression-cache r
 
 Flags: + - Adjacencies synced via CFSoE
@@ -1220,10 +971,10 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags    Remote Vtep Addrs
 
-192.168.10.14   00:00:57 0050.0000.0900   10 (null)              R        10.0.0.4    
-192.168.10.13   00:01:48 0050.0000.0800   10 (null)              R        10.0.0.3    
-192.168.20.12       1w0d 0050.0000.0700   20 (null)              R        10.0.0.2    
-192.168.30.30   02:23:51 0050.0000.0f00   30 (null)              R        10.0.0.253  
+192.168.10.14   02:00:20 0050.0000.0900   10 (null)              R        10.0.0.4    
+192.168.10.13   02:04:46 0050.0000.0800   10 (null)              R        10.0.0.3    
+192.168.20.12   02:00:47 0050.0000.0700   20 (null)              R        10.0.0.2    
+192.168.20.30   02:07:17 0050.0000.0f00   20 (null)              R        10.0.0.253  
 ```
 ### Вывод VPC
 ```
@@ -1253,13 +1004,13 @@ vPC Peer-link status
 ---------------------------------------------------------------------
 id    Port   Status Active vlans    
 --    ----   ------ -------------------------------------------------
-1     Po1000 up     1-3,10,20,30                                                         
+1     Po1000 up     1-2,10,20                                                            
 
 vPC status
 ----------------------------------------------------------------------------
 Id    Port          Status Consistency Reason                Active vlans
 --    ------------  ------ ----------- ------                ---------------
-6     Po6           up     success     success               1-3,10,20,30                      
+6     Po6           up     success     success               1-2,10,20                   
 ```
 ### Вывод port-channel summary
 ```
@@ -1302,31 +1053,19 @@ hardware access-list tcam region racl 512
 hardware access-list tcam region arp-ether 256 double-wide
 
 fabric forwarding anycast-gateway-mac 0000.0000.0001
-vlan 1-3,10,20,30
+vlan 1-2,10,20
 vlan 2
   name VxLan_L3
   vn-segment 5000
-vlan 3
-  vn-segment 6000
 vlan 10
   name Vlan_10
   vn-segment 10010
 vlan 20
   name Vlan_20
   vn-segment 10020
-vlan 30
-  name Vlan_30
-  vn-segment 10030
 
-route-map PERMIT permit 10
 route-map redis permit 10
   match interface loopback1 loopback2 
-vrf context VXL
-  vni 6000
-  rd auto
-  address-family ipv4 unicast
-    route-target both auto
-    route-target both auto evpn
 vrf context VXLAN
   vni 5000
   rd auto
@@ -1334,6 +1073,7 @@ vrf context VXLAN
     route-target both auto
     route-target both auto evpn
 vrf context management
+
 vpc domain 1
   peer-switch
   role priority 200
@@ -1360,14 +1100,6 @@ interface Vlan2
   ip forward
   no ipv6 redirects
 
-interface Vlan3
-  description VxL_L3
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip forward
-  no ipv6 redirects
-
 interface Vlan10
   no shutdown
   vrf member VXLAN
@@ -1381,14 +1113,6 @@ interface Vlan20
   vrf member VXLAN
   no ip redirects
   ip address 192.168.20.1/24
-  no ipv6 redirects
-  fabric forwarding mode anycast-gateway
-
-interface Vlan30
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.30.1/24
   no ipv6 redirects
   fabric forwarding mode anycast-gateway
 
@@ -1409,10 +1133,8 @@ interface nve1
   global suppress-arp
   global ingress-replication protocol bgp
   member vni 5000 associate-vrf
-  member vni 6000 associate-vrf
   member vni 10010
   member vni 10020
-  member vni 10030
 
 interface Ethernet1/1
   description to Spine-1
@@ -1433,6 +1155,7 @@ interface Ethernet1/2
   ip address 10.2.2.3/31
   ip pim sparse-mode
   no shutdown
+
 interface Ethernet1/6
   switchport mode trunk
   channel-group 6 mode active
@@ -1486,71 +1209,98 @@ router bgp 65502
 ```
 ### Вывод маршрутной информации
 ```
-Leaf-2# sh ip bgp all
-BGP routing table information for VRF default, address family IPv4 Unicast
-BGP table version is 90, Local Router ID is 10.0.0.2
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
+Leaf-2# sh ip route
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-   Network            Next Hop            Metric     LocPrf     Weight Path
-*>e10.0.0.1/32        10.2.1.2                                       0 65000 65501 ?
-*|e                   10.2.2.2                                       0 65000 65501 ?
-*>r10.0.0.2/32        0.0.0.0                  0        100      32768 ?
-*|e10.0.0.3/32        10.2.1.2                                       0 65000 65503 ?
-*>e                   10.2.2.2                                       0 65000 65503 ?
-*|e10.0.0.4/32        10.2.1.2                                       0 65000 65504 ?
-*>e                   10.2.2.2                                       0 65000 65504 ?
-*|e10.0.0.253/32      10.2.1.2                                       0 65000 65504 ?
-*>e                   10.2.2.2                                       0 65000 65504 ?
-* e10.0.0.254/32      10.2.1.2                                       0 65000 65501 ?
-* e                   10.2.2.2                                       0 65000 65501 ?
-*>r                   0.0.0.0                  0        100      32768 ?
-*>e10.0.1.0/32        10.2.1.2                 0                     0 65000 ?
-*>e10.0.2.0/32        10.2.2.2                 0                     0 65000 ?
-*>e10.1.0.1/32        10.2.1.2                                       0 65000 65501 ?
-*|e                   10.2.2.2                                       0 65000 65501 ?
-*>r10.1.0.2/32        0.0.0.0                  0        100      32768 ?
-*|e10.1.0.3/32        10.2.2.2                                       0 65000 65503 ?
-*>e                   10.2.1.2                                       0 65000 65503 ?
-*|e10.1.0.4/32        10.2.2.2                                       0 65000 65504 ?
-*>e                   10.2.1.2                                       0 65000 65504 ?
-*>e10.1.1.0/32        10.2.1.2                 0                     0 65000 ?
-*>e10.1.2.0/32        10.2.2.2                 0                     0 65000 ?
+10.0.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 02:30:45, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 02:30:45, bgp-65502, external, tag 65000
+10.0.0.2/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.2, Lo1, [0/0], 02:30:45, local
+    *via 10.0.0.2, Lo1, [0/0], 02:30:45, direct
+10.0.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 01:56:18, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 01:56:18, bgp-65502, external, tag 65000
+10.0.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 01:56:43, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 01:56:43, bgp-65502, external, tag 65000
+10.0.0.253/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 01:56:43, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 01:56:43, bgp-65502, external, tag 65000
+10.0.0.254/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.254, Lo1, [0/0], 02:30:45, local
+    *via 10.0.0.254, Lo1, [0/0], 02:30:45, direct
+10.0.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.0.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.1.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.1.0.2/32, ubest/mbest: 2/0, attached
+    *via 10.1.0.2, Lo2, [0/0], 02:35:31, local
+    *via 10.1.0.2, Lo2, [0/0], 02:35:31, direct
+10.1.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 02:33:56, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 02:33:56, bgp-65502, external, tag 65000
+10.1.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+    *via 10.2.2.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.1.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.1.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.2, [20/0], 02:33:57, bgp-65502, external, tag 65000
+10.2.1.2/31, ubest/mbest: 1/0, attached
+    *via 10.2.1.3, Eth1/1, [0/0], 02:34:21, direct
+10.2.1.3/32, ubest/mbest: 1/0, attached
+    *via 10.2.1.3, Eth1/1, [0/0], 02:34:21, local
+10.2.2.2/31, ubest/mbest: 1/0, attached
+    *via 10.2.2.3, Eth1/2, [0/0], 02:34:21, direct
+10.2.2.3/32, ubest/mbest: 1/0, attached
+    *via 10.2.2.3, Eth1/2, [0/0], 02:34:21, local
+```
+### Вывод маршрутной информации vrf
+```
+Leaf-2# sh ip route vrf vxlan
+IP Route Table for VRF "VXLAN"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-BGP routing table information for VRF default, address family VPNv4 Unicast
-BGP table version is 133, Local Router ID is 10.0.0.2
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
-
-   Network            Next Hop            Metric     LocPrf     Weight Path
-Route Distinguisher: 10.0.0.2:4    (VRF VXLAN)
-* e192.168.10.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.10.11/32   10.0.0.1                                       0 65000 65501 i
-* e192.168.20.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.30.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.30.30/32   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.70.0/24    10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.80.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-
-Route Distinguisher: 10.0.0.2:5    (VRF VXL)
-*>e192.168.10.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.20.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.30.0/24    10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e192.168.30.30/32   10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.70.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.80.0/24    10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-
+192.168.10.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:33:48, direct
+192.168.10.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:33:48, local
+192.168.10.11/32, ubest/mbest: 1/0
+    *via 10.0.0.1%default, [20/0], 01:44:07, bgp-65502, external, tag 65000, segid: 5000 tunnelid: 0xa000001 encap: VXLAN
+ 
+192.168.10.13/32, ubest/mbest: 1/0
+    *via 10.0.0.3%default, [20/0], 01:51:44, bgp-65502, external, tag 65000, segid: 5000 tunnelid: 0xa000003 encap: VXLAN
+ 
+192.168.10.14/32, ubest/mbest: 1/0
+    *via 10.0.0.4%default, [20/0], 01:47:18, bgp-65502, external, tag 65000, segid: 5000 tunnelid: 0xa000004 encap: VXLAN
+ 
+192.168.10.30/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.30, Vlan10, [190/0], 00:03:26, hmm
+192.168.20.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:33:48, direct
+192.168.20.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:33:48, local
+192.168.20.12/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.12, Vlan20, [190/0], 00:04:36, hmm
+192.168.20.30/32, ubest/mbest: 1/0
+    *via 10.0.0.253%default, [20/0], 01:54:15, bgp-65502, external, tag 65000, segid: 5000 tunnelid: 0xa0000fd encap: VXLAN
+```
+### Вывод l2vpn evpn
+```
+Leaf-2# sh bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 11249, Local Router ID is 10.0.0.2
+BGP table version is 220, Local Router ID is 10.0.0.2
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
 Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
@@ -1581,6 +1331,10 @@ Route Distinguisher: 10.0.0.2:32777    (L2VNI 10010)
                       10.0.0.253                                     0 65000 65504 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[32]:[192.168.10.11]/272
                       10.0.0.1                                       0 65000 65501 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
                       10.0.0.254                        100      32768 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
@@ -1592,6 +1346,9 @@ Route Distinguisher: 10.0.0.2:32777    (L2VNI 10010)
 Route Distinguisher: 10.0.0.2:32787    (L2VNI 10020)
 *>l[2]:[0]:[0]:[48]:[0050.0000.0700]:[0]:[0.0.0.0]/216
                       10.0.0.2                          100      32768 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+                      10.0.0.253                                     0 65000 65503 i
+* e                   10.0.0.253                                     0 65000 65504 i
 *>l[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                        100      32768 i
 *>e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
@@ -1600,25 +1357,9 @@ Route Distinguisher: 10.0.0.2:32787    (L2VNI 10020)
                       10.0.0.253                                     0 65000 65504 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
                       10.0.0.2                          100      32768 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65504 i
-*>l[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                        100      32768 i
-
-Route Distinguisher: 10.0.0.2:32797    (L2VNI 10030)
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-*>l[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65504 i
@@ -1629,47 +1370,6 @@ Route Distinguisher: 10.0.0.3:4
 * e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-
-Route Distinguisher: 10.0.0.3:5
-* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
 
 Route Distinguisher: 10.0.0.3:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
@@ -1678,28 +1378,23 @@ Route Distinguisher: 10.0.0.3:32777
 * e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e                   10.0.0.3                                       0 65000 65503 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
 
 Route Distinguisher: 10.0.0.3:32787
-* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-
-Route Distinguisher: 10.0.0.3:32797
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65503 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65503 i
 * e                   10.0.0.253                                     0 65000 65503 i
+* e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
+                      10.0.0.253                                     0 65000 65503 i
+*>e                   10.0.0.253                                     0 65000 65503 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
+                      10.0.0.253                                     0 65000 65503 i
+*>e                   10.0.0.253                                     0 65000 65503 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65503 i
 *>e                   10.0.0.253                                     0 65000 65503 i
@@ -1708,26 +1403,6 @@ Route Distinguisher: 10.0.0.4:4
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-
-Route Distinguisher: 10.0.0.4:5
-* e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
 
 Route Distinguisher: 10.0.0.4:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
@@ -1736,28 +1411,23 @@ Route Distinguisher: 10.0.0.4:32777
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
+* e                   10.0.0.4                                       0 65000 65504 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
 
 Route Distinguisher: 10.0.0.4:32787
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+                      10.0.0.253                                     0 65000 65504 i
+*>e                   10.0.0.253                                     0 65000 65504 i
 * e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
-* e[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-
-Route Distinguisher: 10.0.0.4:32797
-*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65504 i
 * e                   10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65504 i
 * e[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                                     0 65000 65504 i
 *>e                   10.0.0.253                                     0 65000 65504 i
@@ -1771,50 +1441,17 @@ Route Distinguisher: 10.0.0.2:4    (L3VNI 5000)
                       10.0.0.253                                     0 65000 65504 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[32]:[192.168.10.11]/272
                       10.0.0.1                                       0 65000 65501 i
-*|e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*|e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-
-Route Distinguisher: 10.0.0.2:5    (L3VNI 6000)
-*>l[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                                     0 65000 65503 i
-*>e[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                                     0 65000 65504 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
-                      10.0.0.253                                     0 65000 65504 i
-*>e                   10.0.0.253                                     0 65000 65503 i
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-*>e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*|e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
+*>e                   10.0.0.253                                     0 65000 65504 i
 ```
 ### Вывод MAC таблицы
 ```
-Leaf-2# sh mac address-t
+Leaf-2#  sh mac address-t
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -1827,29 +1464,20 @@ Legend:
 *    2     5005.0000.1b08   static   -         F      F    Vlan2
 *    2     5006.0000.1b08   static   -         F      F    nve1(10.0.0.3)
 *    2     500a.0000.1b08   static   -         F      F    nve1(10.0.0.4)
-*    3     0200.0a00.00fd   static   -         F      F    nve1(10.0.0.253)
-*    3     0200.0a00.00fe   static   -         F      F    Vlan3
-*    3     5005.0000.1b08   static   -         F      F    Vlan3
-*    3     5006.0000.1b08   static   -         F      F    nve1(10.0.0.3)
-*    3     500a.0000.1b08   static   -         F      F    nve1(10.0.0.4)
 C   10     0050.0000.0800   dynamic  NA         F      F    nve1(10.0.0.3)
 C   10     0050.0000.0900   dynamic  NA         F      F    nve1(10.0.0.4)
 +   10     0050.0000.0d00   dynamic  NA         F      F    Po6
 *   20     0050.0000.0700   dynamic  NA         F      F    Eth1/7
-C   30     0050.0000.0f00   dynamic  NA         F      F    nve1(10.0.0.253)
+C   20     0050.0000.0f00   dynamic  NA         F      F    nve1(10.0.0.253)
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     0200.0a00.00fe   static   -         F      F    sup-eth1(R)
 G    2     5004.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G    3     5004.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   10     5004.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   20     5004.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   30     5004.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G    -     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5005.0000.1b08   static   -         F      F    sup-eth1(R)
-G    3     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G   10     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 G   20     5005.0000.1b08   static   -         F      F    sup-eth1(R)
-G   30     5005.0000.1b08   static   -         F      F    sup-eth1(R)
 ```
 ### Вывод arp suppression
 ```
@@ -1862,8 +1490,9 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
 
-192.168.10.30   00:02:36 0050.0000.0d00   10 port-channel6       L
-192.168.20.12   00:02:16 0050.0000.0700   20 Ethernet1/7         L
+192.168.10.30   00:00:33 0050.0000.0d00   10 port-channel6       L
+192.168.20.12   00:17:26 0050.0000.0700   20 Ethernet1/7         L
+
 
 Leaf-2# sh ip arp suppression-cache r
 
@@ -1876,10 +1505,10 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags    Remote Vtep Addrs
 
-192.168.10.14   00:00:57 0050.0000.0900   10 (null)              R        10.0.0.4    
-192.168.10.13   00:01:48 0050.0000.0800   10 (null)              R        10.0.0.3    
-192.168.10.11       2w0d 0050.0000.0100   10 (null)              R        10.0.0.1    
-192.168.30.30   02:23:51 0050.0000.0f00   30 (null)              R        10.0.0.253 
+192.168.10.11   01:57:09 0050.0000.0100   10 (null)              R        10.0.0.1    
+192.168.10.14   02:00:20 0050.0000.0900   10 (null)              R        10.0.0.4    
+192.168.10.13   02:04:46 0050.0000.0800   10 (null)              R        10.0.0.3    
+192.168.20.30   02:07:17 0050.0000.0f00   20 (null)              R        10.0.0.253  
 ```
 ### Вывод VPC
 ```
@@ -1909,13 +1538,13 @@ vPC Peer-link status
 ---------------------------------------------------------------------
 id    Port   Status Active vlans    
 --    ----   ------ -------------------------------------------------
-1     Po1000 up     1-3,10,20,30                                                         
+1     Po1000 up     1-2,10,20                                                            
 
 vPC status
 ----------------------------------------------------------------------------
 Id    Port          Status Consistency Reason                Active vlans
 --    ------------  ------ ----------- ------                ---------------
-6     Po6           up     success     success               1-3,10,20,30
+6     Po6           up     success     success               1-2,10,20
 ```
 ### Вывод port-channel summary
 ```
@@ -1958,31 +1587,19 @@ hardware access-list tcam region racl 512
 hardware access-list tcam region arp-ether 256 double-wide
 
 fabric forwarding anycast-gateway-mac 0000.0000.0001
-vlan 1-3,10,20,30,70,80
+vlan 1-2,10,20
 vlan 2
   name VxLan_L3
   vn-segment 5000
-vlan 3
-  vn-segment 6000
 vlan 10
   name Vlan_10
   vn-segment 10010
 vlan 20
   name Vlan_20
   vn-segment 10020
-vlan 30
-  name Vlan_30
-  vn-segment 10030
 
-route-map PERMIT permit 10
 route-map redis permit 10
   match interface loopback1 loopback2 
-vrf context VXL
-  vni 6000
-  rd auto
-  address-family ipv4 unicast
-    route-target both auto
-    route-target both auto evpn
 vrf context VXLAN
   vni 5000
   rd auto
@@ -1990,6 +1607,7 @@ vrf context VXLAN
     route-target both auto
     route-target both auto evpn
 vrf context management
+
 vpc domain 2
   peer-switch
   system-mac aa:11:ff:aa:11:12
@@ -2015,14 +1633,6 @@ interface Vlan2
   ip forward
   no ipv6 redirects
 
-interface Vlan3
-  description VxLan_L3
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip forward
-  no ipv6 redirects
-
 interface Vlan10
   no shutdown
   vrf member VXLAN
@@ -2038,31 +1648,6 @@ interface Vlan20
   ip address 192.168.20.1/24
   no ipv6 redirects
   fabric forwarding mode anycast-gateway
-
-interface Vlan30
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.30.1/24
-  no ipv6 redirects
-  fabric forwarding mode anycast-gateway
-
-interface Vlan70
-  no shutdown
-  vrf member VXLAN
-  no ip redirects
-  ip address 192.168.70.1/24
-  no ipv6 redirects
-
-interface Vlan80
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.80.1/24
-  no ipv6 redirects
-
-interface port-channel5
-  vpc 5
 
 interface port-channel6
   switchport mode trunk
@@ -2082,10 +1667,8 @@ interface nve1
   global suppress-arp
   global ingress-replication protocol bgp
   member vni 5000 associate-vrf
-  member vni 6000 associate-vrf
   member vni 10010
   member vni 10020
-  member vni 10030
 
 interface Ethernet1/1
   description to Spine-1
@@ -2104,14 +1687,6 @@ interface Ethernet1/2
   no ip redirects
   ip address 10.2.2.5/31
   no shutdown
-
-interface Ethernet1/3
-  switchport access vlan 70
-  spanning-tree port type edge
-
-interface Ethernet1/4
-  switchport access vlan 80
-  spanning-tree port type edge
 
 interface Ethernet1/6
   switchport mode trunk
@@ -2164,95 +1739,102 @@ router bgp 65503
     inherit peer SPINES
   neighbor 10.2.2.4
     inherit peer SPINES
-  vrf VXL
-    address-family ipv4 unicast
-      redistribute hmm route-map PERMIT
-      redistribute direct route-map PERMIT
-    neighbor 192.168.80.3
-      remote-as 49900
-      address-family ipv4 unicast
-  vrf VXLAN
-    address-family ipv4 unicast
-      redistribute hmm route-map PERMIT
-      redistribute direct route-map PERMIT
-    neighbor 192.168.70.3
-      remote-as 49900
-      address-family ipv4 unicast
 ```
 ### Вывод маршрутной информации
 ```
-sh ip bgp all
-BGP routing table information for VRF default, address family IPv4 Unicast
-BGP table version is 19, Local Router ID is 10.0.0.3
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
+Leaf-3# sh ip route
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-   Network            Next Hop            Metric     LocPrf     Weight Path
-*>e10.0.0.1/32        10.2.1.4                                       0 65000 65501 ?
-*|e                   10.2.2.4                                       0 65000 65501 ?
-*>e10.0.0.2/32        10.2.1.4                                       0 65000 65502 ?
-*|e                   10.2.2.4                                       0 65000 65502 ?
-*>r10.0.0.3/32        0.0.0.0                  0        100      32768 ?
-*>e10.0.0.4/32        10.2.1.4                                       0 65000 65504 ?
-*|e                   10.2.2.4                                       0 65000 65504 ?
-* e10.0.0.253/32      10.2.1.4                                       0 65000 65504 ?
-* e                   10.2.2.4                                       0 65000 65504 ?
-*>r                   0.0.0.0                  0        100      32768 ?
-*>e10.0.0.254/32      10.2.1.4                                       0 65000 65501 ?
-*|e                   10.2.2.4                                       0 65000 65501 ?
-*>e10.0.1.0/32        10.2.1.4                 0                     0 65000 ?
-*>e10.0.2.0/32        10.2.2.4                 0                     0 65000 ?
-*>e10.1.0.1/32        10.2.1.4                                       0 65000 65501 ?
-*|e                   10.2.2.4                                       0 65000 65501 ?
-*>e10.1.0.2/32        10.2.1.4                                       0 65000 65502 ?
-*|e                   10.2.2.4                                       0 65000 65502 ?
-*>r10.1.0.3/32        0.0.0.0                  0        100      32768 ?
-*>e10.1.0.4/32        10.2.1.4                                       0 65000 65504 ?
-*|e                   10.2.2.4                                       0 65000 65504 ?
-*>e10.1.1.0/32        10.2.1.4                 0                     0 65000 ?
-*>e10.1.2.0/32        10.2.2.4                 0                     0 65000 ?
+10.0.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+10.0.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+10.0.0.3/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.3, Lo1, [0/0], 01:56:18, local
+    *via 10.0.0.3, Lo1, [0/0], 01:56:18, direct
+10.0.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 01:56:43, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 01:56:43, bgp-65503, external, tag 65000
+10.0.0.253/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.253, Lo1, [0/0], 01:56:18, local
+    *via 10.0.0.253, Lo1, [0/0], 01:56:18, direct
+10.0.0.254/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:30:45, bgp-65503, external, tag 65000
+10.0.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.0.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.1.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.1.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.1.0.3/32, ubest/mbest: 2/0, attached
+    *via 10.1.0.3, Lo2, [0/0], 02:35:44, local
+    *via 10.1.0.3, Lo2, [0/0], 02:35:44, direct
+10.1.0.4/32, ubest/mbest: 2/0
+    *via 10.2.1.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+    *via 10.2.2.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.1.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.1.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.4, [20/0], 02:33:56, bgp-65503, external, tag 65000
+10.2.1.4/31, ubest/mbest: 1/0, attached
+    *via 10.2.1.5, Eth1/1, [0/0], 02:34:03, direct
+10.2.1.5/32, ubest/mbest: 1/0, attached
+    *via 10.2.1.5, Eth1/1, [0/0], 02:34:03, local
+10.2.2.4/31, ubest/mbest: 1/0, attached
+    *via 10.2.2.5, Eth1/2, [0/0], 02:34:03, direct
+10.2.2.5/32, ubest/mbest: 1/0, attached
+    *via 10.2.2.5, Eth1/2, [0/0], 02:34:03, local
+```
+### Вывод маршрутной информации vrf
+```
+Leaf-3# sh ip route vrf vxlan
+IP Route Table for VRF "VXLAN"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-BGP routing table information for VRF default, address family VPNv4 Unicast
-BGP table version is 61, Local Router ID is 10.0.0.3
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
-
-   Network            Next Hop            Metric     LocPrf     Weight Path
-Route Distinguisher: 10.0.0.3:4    (VRF VXL)
-*>e192.168.10.0/24    192.168.80.3                                   0 49900 49900 ?
-*>e192.168.10.11/32   192.168.80.3                                   0 49900 49900 65000 65501 i
-*>e192.168.10.30/32   192.168.80.3                                   0 49900 49900 65000 65502 i
-*>e192.168.20.0/24    192.168.80.3                                   0 49900 49900 ?
-*>e192.168.20.12/32   192.168.80.3                                   0 49900 49900 65000 65502 i
-*>r192.168.30.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-* e                   192.168.80.3                                   0 49900 49900 ?
-*>r192.168.30.30/32   0.0.0.0                  0        100      32768 ?
-* e                   192.168.80.3                                   0 49900 49900 ?
-*>e192.168.70.0/24    192.168.80.3                                   0 49900 49900 ?
-*>r192.168.80.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-* e                   192.168.80.3                                   0 49900 49900 ?
-
-Route Distinguisher: 10.0.0.3:5    (VRF VXLAN)
-*>r192.168.10.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.10.11/32   10.0.0.1                                       0 65000 65501 i
-*>e192.168.10.30/32   10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-*>r192.168.20.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.20.12/32   10.0.0.2                                       0 65000 65502 i
-*>e192.168.30.0/24    192.168.70.3                                   0 49900 49900 ?
-*>e192.168.30.30/32   192.168.70.3                                   0 49900 49900 ?
-*>r192.168.70.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>e192.168.80.0/24    192.168.70.3                                   0 49900 49900 ?
-
+192.168.10.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:35:57, direct
+192.168.10.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 02:35:57, local
+192.168.10.11/32, ubest/mbest: 1/0
+    *via 10.0.0.1%default, [20/0], 01:44:07, bgp-65503, external, tag 65000, segid: 5000 tunnelid: 0xa000001 encap: VXLAN
+ 
+192.168.10.13/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.13, Vlan10, [190/0], 00:04:21, hmm
+192.168.10.14/32, ubest/mbest: 1/0
+    *via 10.0.0.4%default, [20/0], 01:47:18, bgp-65503, external, tag 65000, segid: 5000 tunnelid: 0xa000004 encap: VXLAN
+ 
+192.168.10.30/32, ubest/mbest: 1/0
+    *via 10.0.0.254%default, [20/0], 01:56:11, bgp-65503, external, tag 65000, segid: 5000 tunnelid: 0xa0000fe encap: VXLAN
+ 
+192.168.20.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:35:57, direct
+192.168.20.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 02:35:57, local
+192.168.20.12/32, ubest/mbest: 1/0
+    *via 10.0.0.2%default, [20/0], 01:47:45, bgp-65503, external, tag 65000, segid: 5000 tunnelid: 0xa000002 encap: VXLAN
+ 
+192.168.20.30/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.30, Vlan20, [190/0], 00:03:22, hmm
+```
+### Вывод l2vpn evpn
+```
+Leaf-3# sh bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 221, Local Router ID is 10.0.0.3
+BGP table version is 334, Local Router ID is 10.0.0.3
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
 Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
@@ -2263,18 +1845,13 @@ Route Distinguisher: 10.0.0.1:4
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
 
-Route Distinguisher: 10.0.0.1:5
-* e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-
 Route Distinguisher: 10.0.0.1:32777
-* e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
                       10.0.0.1                                       0 65000 65501 i
-*>e                   10.0.0.1                                       0 65000 65501 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
+* e                   10.0.0.1                                       0 65000 65501 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65501 i
 * e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
@@ -2296,28 +1873,15 @@ Route Distinguisher: 10.0.0.1:32787
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
 
-Route Distinguisher: 10.0.0.1:32797
-* e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-* e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-
 Route Distinguisher: 10.0.0.2:4
 * e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
 
-Route Distinguisher: 10.0.0.2:5
-* e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
-
 Route Distinguisher: 10.0.0.2:32777
-* e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
+* e                   10.0.0.254                                     0 65000 65502 i
 * e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
@@ -2342,14 +1906,6 @@ Route Distinguisher: 10.0.0.2:32787
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
 
-Route Distinguisher: 10.0.0.2:32797
-* e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
-* e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
-
 Route Distinguisher: 10.0.0.3:32777    (L2VNI 10010)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
                       10.0.0.1                                       0 65000 65501 i
@@ -2368,33 +1924,22 @@ Route Distinguisher: 10.0.0.3:32777    (L2VNI 10010)
                       10.0.0.253                        100      32768 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[32]:[192.168.10.11]/272
                       10.0.0.1                                       0 65000 65501 i
+*>l[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                          100      32768 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 *>l[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                        100      32768 i
 *>e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 
 Route Distinguisher: 10.0.0.3:32787    (L2VNI 10020)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[0]:[0.0.0.0]/216
                       10.0.0.2                                       0 65000 65502 i
-*>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>l[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
-                      10.0.0.2                                       0 65000 65502 i
-*>l[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                        100      32768 i
-*>e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-
-Route Distinguisher: 10.0.0.3:32797    (L2VNI 10030)
 *>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
                       10.0.0.253                        100      32768 i
 *>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
@@ -2403,67 +1948,25 @@ Route Distinguisher: 10.0.0.3:32797    (L2VNI 10030)
                       10.0.0.254                                     0 65000 65502 i
 *>l[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                        100      32768 i
-*>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
+*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
+                      10.0.0.2                                       0 65000 65502 i
+*>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                        100      32768 i
 *>l[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                        100      32768 i
 *>e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-
-Route Distinguisher: 10.0.0.4:4
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-
-Route Distinguisher: 10.0.0.4:5
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.4                                       0 65000 65504 ?
-*>e                   10.0.0.4                                       0 65000 65504 ?
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 
 Route Distinguisher: 10.0.0.4:32777
 * e[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
                       10.0.0.4                                       0 65000 65504 i
 *>e                   10.0.0.4                                       0 65000 65504 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
+* e                   10.0.0.4                                       0 65000 65504 i
 
-Route Distinguisher: 10.0.0.3:4    (L3VNI 6000)
-*>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>l[2]:[0]:[0]:[48]:[5006.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                        100      32768 i
-*>l[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 49900 49900 ?
-*>l[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 49900 49900 ?
-*>l[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                 0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>l[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 49900 49900 ?
-*>l[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                 0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>l[5]:[0]:[0]:[32]:[192.168.10.11]/224
-                      10.0.0.3                                       0 49900 49900 65000 65501 i
-*>l[5]:[0]:[0]:[32]:[192.168.10.30]/224
-                      10.0.0.3                                       0 49900 49900 65000 65502 i
-*>l[5]:[0]:[0]:[32]:[192.168.20.12]/224
-                      10.0.0.3                                       0 49900 49900 65000 65502 i
-*>l[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                 0        100      32768 ?
-
-Route Distinguisher: 10.0.0.3:5    (L3VNI 5000)
+Route Distinguisher: 10.0.0.3:4    (L3VNI 5000)
 *>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
 *>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
@@ -2474,28 +1977,15 @@ Route Distinguisher: 10.0.0.3:5    (L3VNI 5000)
                       10.0.0.1                                       0 65000 65501 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
                       10.0.0.2                                       0 65000 65502 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                                       0 65000 65504 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-*>l[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                 0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>l[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                 0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>l[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 49900 49900 ?
-*>l[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                 0        100      32768 ?
-* e                   10.0.0.4                                       0 65000 65504 ?
-*>l[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 49900 49900 ?
-*>l[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 49900 49900 ?
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 ```
 ### Вывод MAC таблицы
 ```
-Leaf-3# sh mac address-t
+Leaf-3#  sh mac address-t
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -2508,33 +1998,20 @@ Legend:
 *    2     5004.0000.1b08   static   -         F      F    nve1(10.0.0.1)
 *    2     5005.0000.1b08   static   -         F      F    nve1(10.0.0.2)
 *    2     5006.0000.1b08   static   -         F      F    Vlan2
-*    3     0200.0a00.00fd   static   -         F      F    Vlan3
-*    3     0200.0a00.00fe   static   -         F      F    nve1(10.0.0.254)
-*    3     5006.0000.1b08   static   -         F      F    Vlan3
 C   10     0050.0000.0100   dynamic  NA         F      F    nve1(10.0.0.1)
 *   10     0050.0000.0800   dynamic  NA         F      F    Eth1/7
 C   10     0050.0000.0d00   dynamic  NA         F      F    nve1(10.0.0.254)
 C   20     0050.0000.0700   dynamic  NA         F      F    nve1(10.0.0.2)
-*   30     0050.0000.0f00   dynamic  NA         F      F    Po6
-*   70     1212.1212.1212   dynamic  NA         F      F    Eth1/3
-*   80     1212.1212.1213   dynamic  NA         F      F    Eth1/4
+*   20     0050.0000.0f00   dynamic  NA         F      F    Po6
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     0200.0a00.00fd   static   -         F      F    sup-eth1(R)
 G    -     5006.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     5006.0000.1b08   static   -         F      F    sup-eth1(R)
-G    3     5006.0000.1b08   static   -         F      F    sup-eth1(R)
 G   10     5006.0000.1b08   static   -         F      F    sup-eth1(R)
 G   20     5006.0000.1b08   static   -         F      F    sup-eth1(R)
-G   30     5006.0000.1b08   static   -         F      F    sup-eth1(R)
-G   70     5006.0000.1b08   static   -         F      F    sup-eth1(R)
-G   80     5006.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G    3     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   10     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   20     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   30     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   70     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   80     500a.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 ```
 ### Вывод arp suppression
 ```
@@ -2547,8 +2024,8 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
 
-192.168.10.13   00:01:41 0050.0000.0800   10 Ethernet1/7         L
-192.168.30.30   00:00:03 0050.0000.0f00   30 port-channel6       L
+192.168.10.13   00:17:11 0050.0000.0800   10 Ethernet1/7         L
+192.168.20.30   00:00:35 0050.0000.0f00   20 port-channel6       L
 
 Leaf-3# sh ip arp suppression-cache r
 
@@ -2561,10 +2038,10 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags    Remote Vtep Addrs
 
-192.168.10.14   00:00:57 0050.0000.0900   10 (null)              R        10.0.0.4    
-192.168.10.11   02:24:53 0050.0000.0100   10 (null)              R        10.0.0.1    
-192.168.10.30   02:24:53 0050.0000.0d00   10 (null)              R        10.0.0.254  
-192.168.20.12   02:24:53 0050.0000.0700   20 (null)              R        10.0.0.2    
+192.168.10.11   01:57:09 0050.0000.0100   10 (null)              R        10.0.0.1    
+192.168.10.14   02:00:20 0050.0000.0900   10 (null)              R        10.0.0.4    
+192.168.10.30   02:09:13 0050.0000.0d00   10 (null)              R        10.0.0.254  
+192.168.20.12   02:00:47 0050.0000.0700   20 (null)              R        10.0.0.2    
 ```
 ### Вывод VPC
 ```
@@ -2578,7 +2055,7 @@ vPC keep-alive status             : peer is alive
 Configuration consistency status  : success 
 Per-vlan consistency status       : success                       
 Type-2 consistency status         : success 
-vPC role                          : primary, operational secondary
+vPC role                          : primary                       
 Number of vPCs configured         : 1   
 Peer Gateway                      : Enabled
 Dual-active excluded VLANs        : -
@@ -2594,13 +2071,13 @@ vPC Peer-link status
 ---------------------------------------------------------------------
 id    Port   Status Active vlans    
 --    ----   ------ -------------------------------------------------
-1     Po1000 up     1-3,10,20,30,70,80                                                   
+1     Po1000 up     1-2,10,20                                                            
 
 vPC status
 ----------------------------------------------------------------------------
 Id    Port          Status Consistency Reason                Active vlans
 --    ------------  ------ ----------- ------                ---------------
-6     Po6           up     success     success               1-3,10,20,30,70,80
+6     Po6           up     success     success               1-2,10,20
 ```
 ### Вывод port-channel summary
 ```
@@ -2642,31 +2119,19 @@ hardware access-list tcam region racl 512
 hardware access-list tcam region arp-ether 256 double-wide
 
 fabric forwarding anycast-gateway-mac 0000.0000.0001
-vlan 1-3,10,20,30,70,80
+vlan 1-2,10,20
 vlan 2
   name VxLan_L3
   vn-segment 5000
-vlan 3
-  vn-segment 6000
 vlan 10
   name Vlan_10
   vn-segment 10010
 vlan 20
   name Vlan_20
   vn-segment 10020
-vlan 30
-  name Vlan_30
-  vn-segment 10030
 
-route-map PERMIT permit 10
 route-map redis permit 10
   match interface loopback1 loopback2 
-vrf context VXL
-  vni 6000
-  rd auto
-  address-family ipv4 unicast
-    route-target both auto
-    route-target both auto evpn
 vrf context VXLAN
   vni 5000
   rd auto
@@ -2674,6 +2139,9 @@ vrf context VXLAN
     route-target both auto
     route-target both auto evpn
 vrf context management
+
+interface Vlan1
+
 vpc domain 2
   peer-switch
   system-mac aa:11:ff:aa:11:12
@@ -2699,14 +2167,6 @@ interface Vlan2
   ip forward
   no ipv6 redirects
 
-interface Vlan3
-  description VxLan_L3
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip forward
-  no ipv6 redirects
-
 interface Vlan10
   no shutdown
   vrf member VXLAN
@@ -2722,31 +2182,6 @@ interface Vlan20
   ip address 192.168.20.1/24
   no ipv6 redirects
   fabric forwarding mode anycast-gateway
-
-interface Vlan30
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.30.1/24
-  no ipv6 redirects
-  fabric forwarding mode anycast-gateway
-
-interface Vlan70
-  no shutdown
-  vrf member VXLAN
-  no ip redirects
-  ip address 192.168.70.2/24
-  no ipv6 redirects
-
-interface Vlan80
-  no shutdown
-  vrf member VXL
-  no ip redirects
-  ip address 192.168.80.2/24
-  no ipv6 redirects
-
-interface port-channel5
-  vpc 5
 
 interface port-channel6
   switchport mode trunk
@@ -2766,10 +2201,8 @@ interface nve1
   global suppress-arp
   global ingress-replication protocol bgp
   member vni 5000 associate-vrf
-  member vni 6000 associate-vrf
   member vni 10010
   member vni 10020
-  member vni 10030
 
 interface Ethernet1/1
   description to Spine-1
@@ -2842,70 +2275,100 @@ router bgp 65504
 ```
 ### Вывод маршрутной информации
 ```
-Leaf-4# sh ip bgp all
-BGP routing table information for VRF default, address family IPv4 Unicast
-BGP table version is 47, Local Router ID is 10.0.0.4
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
+Leaf-4# sh ip route
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-   Network            Next Hop            Metric     LocPrf     Weight Path
-*|e10.0.0.1/32        10.2.2.6                                       0 65000 65501 ?
-*>e                   10.2.1.6                                       0 65000 65501 ?
-*|e10.0.0.2/32        10.2.2.6                                       0 65000 65502 ?
-*>e                   10.2.1.6                                       0 65000 65502 ?
-*|e10.0.0.3/32        10.2.1.6                                       0 65000 65503 ?
-*>e                   10.2.2.6                                       0 65000 65503 ?
-*>r10.0.0.4/32        0.0.0.0                  0        100      32768 ?
-*>r10.0.0.253/32      0.0.0.0                  0        100      32768 ?
-*|e10.0.0.254/32      10.2.2.6                                       0 65000 65501 ?
-*>e                   10.2.1.6                                       0 65000 65501 ?
-*>e10.0.1.0/32        10.2.1.6                 0                     0 65000 ?
-*>e10.0.2.0/32        10.2.2.6                 0                     0 65000 ?
-*|e10.1.0.1/32        10.2.2.6                                       0 65000 65501 ?
-*>e                   10.2.1.6                                       0 65000 65501 ?
-*|e10.1.0.2/32        10.2.2.6                                       0 65000 65502 ?
-*>e                   10.2.1.6                                       0 65000 65502 ?
-*|e10.1.0.3/32        10.2.2.6                                       0 65000 65503 ?
-*>e                   10.2.1.6                                       0 65000 65503 ?
-*>r10.1.0.4/32        0.0.0.0                  0        100      32768 ?
-*>e10.1.1.0/32        10.2.1.6                 0                     0 65000 ?
-*>e10.1.2.0/32        10.2.2.6                 0                     0 65000 ?
+10.0.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+10.0.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+10.0.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 01:56:18, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 01:56:18, bgp-65504, external, tag 65000
+10.0.0.4/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.4, Lo1, [0/0], 01:56:43, local
+    *via 10.0.0.4, Lo1, [0/0], 01:56:43, direct
+10.0.0.253/32, ubest/mbest: 2/0, attached
+    *via 10.0.0.253, Lo1, [0/0], 01:56:43, local
+    *via 10.0.0.253, Lo1, [0/0], 01:56:43, direct
+10.0.0.254/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:30:45, bgp-65504, external, tag 65000
+10.0.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.6, [20/0], 02:34:14, bgp-65504, external, tag 65000
+10.0.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.6, [20/0], 02:34:14, bgp-65504, external, tag 65000
+10.1.0.1/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:33:58, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:33:58, bgp-65504, external, tag 65000
+10.1.0.2/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:33:58, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:33:58, bgp-65504, external, tag 65000
+10.1.0.3/32, ubest/mbest: 2/0
+    *via 10.2.1.6, [20/0], 02:33:57, bgp-65504, external, tag 65000
+    *via 10.2.2.6, [20/0], 02:33:57, bgp-65504, external, tag 65000
+10.1.0.4/32, ubest/mbest: 2/0, attached
+    *via 10.1.0.4, Lo2, [0/0], 02:35:39, local
+    *via 10.1.0.4, Lo2, [0/0], 02:35:39, direct
+10.1.1.0/32, ubest/mbest: 1/0
+    *via 10.2.1.6, [20/0], 02:34:14, bgp-65504, external, tag 65000
+10.1.2.0/32, ubest/mbest: 1/0
+    *via 10.2.2.6, [20/0], 02:34:14, bgp-65504, external, tag 65000
+10.2.1.6/31, ubest/mbest: 1/0, attached
+    *via 10.2.1.7, Eth1/1, [0/0], 02:34:25, direct
+10.2.1.7/32, ubest/mbest: 1/0, attached
+    *via 10.2.1.7, Eth1/1, [0/0], 02:34:25, local
+10.2.2.6/31, ubest/mbest: 1/0, attached
+    *via 10.2.2.7, Eth1/2, [0/0], 02:34:25, direct
+10.2.2.7/32, ubest/mbest: 1/0, attached
+    *via 10.2.2.7, Eth1/2, [0/0], 02:34:25, local
+```
+### Вывод маршрутной информации vrf
+```
+Leaf-4# sh ip route vrf vxlan
+IP Route Table for VRF "VXLAN"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-BGP routing table information for VRF default, address family VPNv4 Unicast
-BGP table version is 12670744, Local Router ID is 10.0.0.4
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
+192.168.10.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 01:57:10, direct
+192.168.10.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.1, Vlan10, [0/0], 01:57:10, local
+192.168.10.11/32, ubest/mbest: 1/0
+    *via 10.0.0.1%default, [20/0], 01:44:06, bgp-65504, external, tag 65000, segid: 5000 tunnelid: 0xa000001 encap: VXLAN
+ 
+192.168.10.13/32, ubest/mbest: 1/0
+    *via 10.0.0.3%default, [20/0], 01:51:43, bgp-65504, external, tag 65000, segid: 5000 tunnelid: 0xa000003 encap: VXLAN
+ 
+192.168.10.14/32, ubest/mbest: 1/0, attached
+    *via 192.168.10.14, Vlan10, [190/0], 00:04:41, hmm
+192.168.10.30/32, ubest/mbest: 1/0
+    *via 10.0.0.254%default, [20/0], 01:56:34, bgp-65504, external, tag 65000, segid: 5000 tunnelid: 0xa0000fe encap: VXLAN
+ 
+192.168.20.0/24, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 01:57:10, direct
+192.168.20.1/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.1, Vlan20, [0/0], 01:57:10, local
+192.168.20.12/32, ubest/mbest: 1/0
+    *via 10.0.0.2%default, [20/0], 01:47:44, bgp-65504, external, tag 65000, segid: 5000 tunnelid: 0xa000002 encap: VXLAN
+ 
+192.168.20.30/32, ubest/mbest: 1/0, attached
+    *via 192.168.20.30, Vlan20, [190/0], 00:03:21, hmm
 
-   Network            Next Hop            Metric     LocPrf     Weight Path
-Route Distinguisher: 10.0.0.4:4    (VRF VXL)
-*>e192.168.10.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.20.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>r192.168.30.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.30.30/32   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.70.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.80.0/24    10.0.0.3                                       0 65000 65503 ?
-*>r                   0.0.0.0                  0        100      32768 ?
-
-Route Distinguisher: 10.0.0.4:5    (VRF VXLAN)
-*>r192.168.10.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.10.11/32   10.0.0.1                                       0 65000 65501 i
-*>e192.168.10.30/32   10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-*>r192.168.20.0/24    0.0.0.0                  0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e192.168.20.12/32   10.0.0.2                                       0 65000 65502 i
-*>e192.168.30.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e192.168.30.30/32   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e192.168.70.0/24    10.0.0.3                                       0 65000 65503 ?
-*>r                   0.0.0.0                  0        100      32768 ?
-*>e192.168.80.0/24    10.0.0.3                                       0 65000 65503 49900 49900 ?
-
+```
+### Вывод l2vpn evpn
+```
+Leaf-4# sh bgp l2vpn evpn
 BGP routing table information for VRF default, address family L2VPN EVPN
-BGP table version is 508, Local Router ID is 10.0.0.4
+BGP table version is 305, Local Router ID is 10.0.0.4
 Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
 Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-injected
 Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - best2
@@ -2916,15 +2379,10 @@ Route Distinguisher: 10.0.0.1:4
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
 
-Route Distinguisher: 10.0.0.1:5
-* e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-
 Route Distinguisher: 10.0.0.1:32777
-* e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
+*>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
                       10.0.0.1                                       0 65000 65501 i
-*>e                   10.0.0.1                                       0 65000 65501 i
+* e                   10.0.0.1                                       0 65000 65501 i
 * e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
@@ -2949,20 +2407,7 @@ Route Distinguisher: 10.0.0.1:32787
                       10.0.0.254                                     0 65000 65501 i
 *>e                   10.0.0.254                                     0 65000 65501 i
 
-Route Distinguisher: 10.0.0.1:32797
-* e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-* e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65501 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-
 Route Distinguisher: 10.0.0.2:4
-* e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
-
-Route Distinguisher: 10.0.0.2:5
 * e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
@@ -2988,65 +2433,20 @@ Route Distinguisher: 10.0.0.2:32787
 * e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
+*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
                       10.0.0.2                                       0 65000 65502 i
-*>e                   10.0.0.2                                       0 65000 65502 i
+* e                   10.0.0.2                                       0 65000 65502 i
 * e[3]:[0]:[32]:[10.0.0.254]/88
                       10.0.0.254                                     0 65000 65502 i
 *>e                   10.0.0.254                                     0 65000 65502 i
-
-Route Distinguisher: 10.0.0.2:32797
-*>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65502 i
-* e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65502 i
-
-Route Distinguisher: 10.0.0.3:4
-* e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>e                   10.0.0.3                                       0 65000 65503 ?
-
-Route Distinguisher: 10.0.0.3:5
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e                   10.0.0.3                                       0 65000 65503 49900 49900 ?
 
 Route Distinguisher: 10.0.0.3:32777
 *>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[0]:[0.0.0.0]/216
                       10.0.0.3                                       0 65000 65503 i
 * e                   10.0.0.3                                       0 65000 65503 i
+* e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>e                   10.0.0.3                                       0 65000 65503 i
 
 Route Distinguisher: 10.0.0.4:32777    (L2VNI 10010)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[0]:[0.0.0.0]/216
@@ -3055,9 +2455,9 @@ Route Distinguisher: 10.0.0.4:32777    (L2VNI 10010)
                       10.0.0.3                                       0 65000 65503 i
 *>l[2]:[0]:[0]:[48]:[0050.0000.0900]:[0]:[0.0.0.0]/216
                       10.0.0.4                          100      32768 i
-* e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65501 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[0]:[0.0.0.0]/216
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 *>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
 *>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
@@ -3066,33 +2466,22 @@ Route Distinguisher: 10.0.0.4:32777    (L2VNI 10010)
                       10.0.0.253                        100      32768 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0100]:[32]:[192.168.10.11]/272
                       10.0.0.1                                       0 65000 65501 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
+*>l[2]:[0]:[0]:[48]:[0050.0000.0900]:[32]:[192.168.10.14]/272
+                      10.0.0.4                          100      32768 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 *>l[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                        100      32768 i
 *>e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 
 Route Distinguisher: 10.0.0.4:32787    (L2VNI 10020)
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[0]:[0.0.0.0]/216
                       10.0.0.2                                       0 65000 65502 i
-*>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65501 i
-*>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>l[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                        100      32768 i
-*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
-                      10.0.0.2                                       0 65000 65502 i
-*>l[3]:[0]:[32]:[10.0.0.253]/88
-                      10.0.0.253                        100      32768 i
-*>e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-
-Route Distinguisher: 10.0.0.4:32797    (L2VNI 10030)
 *>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[0]:[0.0.0.0]/216
                       10.0.0.253                        100      32768 i
 *>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
@@ -3101,37 +2490,17 @@ Route Distinguisher: 10.0.0.4:32797    (L2VNI 10030)
                       10.0.0.254                                     0 65000 65502 i
 *>l[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.253                        100      32768 i
-*>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.30.30]/272
+*>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
+                      10.0.0.2                                       0 65000 65502 i
+*>l[2]:[0]:[0]:[48]:[0050.0000.0f00]:[32]:[192.168.20.30]/272
                       10.0.0.253                        100      32768 i
 *>l[3]:[0]:[32]:[10.0.0.253]/88
                       10.0.0.253                        100      32768 i
-* e[3]:[0]:[32]:[10.0.0.254]/88
-                      10.0.0.254                                     0 65000 65502 i
-*>e                   10.0.0.254                                     0 65000 65501 i
-
-Route Distinguisher: 10.0.0.4:4    (L3VNI 6000)
-*>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
+*>e[3]:[0]:[32]:[10.0.0.254]/88
                       10.0.0.254                                     0 65000 65501 i
-*>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.254                                     0 65000 65502 i
-*>l[2]:[0]:[0]:[48]:[500a.0000.1b08]:[0]:[0.0.0.0]/216
-                      10.0.0.253                        100      32768 i
-*>e[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>l[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.4                 0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>l                   10.0.0.4                 0        100      32768 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 ?
+* e                   10.0.0.254                                     0 65000 65502 i
 
-Route Distinguisher: 10.0.0.4:5    (L3VNI 5000)
+Route Distinguisher: 10.0.0.4:4    (L3VNI 5000)
 *>e[2]:[0]:[0]:[48]:[5004.0000.1b08]:[0]:[0.0.0.0]/216
                       10.0.0.254                                     0 65000 65501 i
 *>e[2]:[0]:[0]:[48]:[5005.0000.1b08]:[0]:[0.0.0.0]/216
@@ -3142,28 +2511,15 @@ Route Distinguisher: 10.0.0.4:5    (L3VNI 5000)
                       10.0.0.1                                       0 65000 65501 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0700]:[32]:[192.168.20.12]/272
                       10.0.0.2                                       0 65000 65502 i
+*>e[2]:[0]:[0]:[48]:[0050.0000.0800]:[32]:[192.168.10.13]/272
+                      10.0.0.3                                       0 65000 65503 i
 *>e[2]:[0]:[0]:[48]:[0050.0000.0d00]:[32]:[192.168.10.30]/272
-                      10.0.0.254                                     0 65000 65502 i
-* e                   10.0.0.254                                     0 65000 65501 i
-*>l[5]:[0]:[0]:[24]:[192.168.10.0]/224
-                      10.0.0.4                 0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>l[5]:[0]:[0]:[24]:[192.168.20.0]/224
-                      10.0.0.4                 0        100      32768 ?
-* e                   10.0.0.3                                       0 65000 65503 ?
-*>e[5]:[0]:[0]:[24]:[192.168.30.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-* e[5]:[0]:[0]:[24]:[192.168.70.0]/224
-                      10.0.0.3                                       0 65000 65503 ?
-*>l                   10.0.0.4                 0        100      32768 ?
-*>e[5]:[0]:[0]:[24]:[192.168.80.0]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
-*>e[5]:[0]:[0]:[32]:[192.168.30.30]/224
-                      10.0.0.3                                       0 65000 65503 49900 49900 ?
+                      10.0.0.254                                     0 65000 65501 i
+* e                   10.0.0.254                                     0 65000 65502 i
 ```
 ### Вывод MAC таблицы
 ```
-Leaf-4# sh mac address-t
+Leaf-4#  sh mac address-t
 Legend: 
         * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC
         age - seconds since last seen,+ - primary entry using vPC Peer-Link,
@@ -3176,31 +2532,20 @@ Legend:
 *    2     5004.0000.1b08   static   -         F      F    nve1(10.0.0.1)
 *    2     5005.0000.1b08   static   -         F      F    nve1(10.0.0.2)
 *    2     500a.0000.1b08   static   -         F      F    Vlan2
-*    3     0200.0a00.00fd   static   -         F      F    Vlan3
-*    3     0200.0a00.00fe   static   -         F      F    nve1(10.0.0.254)
-*    3     500a.0000.1b08   static   -         F      F    Vlan3
 C   10     0050.0000.0100   dynamic  NA         F      F    nve1(10.0.0.1)
 *   10     0050.0000.0900   dynamic  NA         F      F    Eth1/7
 C   10     0050.0000.0d00   dynamic  NA         F      F    nve1(10.0.0.254)
 C   20     0050.0000.0700   dynamic  NA         F      F    nve1(10.0.0.2)
-+   30     0050.0000.0f00   dynamic  NA         F      F    Po6
++   20     0050.0000.0f00   dynamic  NA         F      F    Po6
 G    -     0000.0000.0001   static   -         F      F    sup-eth1(R)
 G    -     0200.0a00.00fd   static   -         F      F    sup-eth1(R)
 G    2     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G    3     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   10     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G   20     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   30     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   70     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
-G   80     5006.0000.1b08   static   -         F      F    vPC Peer-Link(R)
 G    -     500a.0000.1b08   static   -         F      F    sup-eth1(R)
 G    2     500a.0000.1b08   static   -         F      F    sup-eth1(R)
-G    3     500a.0000.1b08   static   -         F      F    sup-eth1(R)
 G   10     500a.0000.1b08   static   -         F      F    sup-eth1(R)
 G   20     500a.0000.1b08   static   -         F      F    sup-eth1(R)
-G   30     500a.0000.1b08   static   -         F      F    sup-eth1(R)
-G   70     500a.0000.1b08   static   -         F      F    sup-eth1(R)
-G   80     500a.0000.1b08   static   -         F      F    sup-eth1(R)
 ```
 ### Вывод arp suppression
 ```
@@ -3213,8 +2558,8 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags
 
-192.168.10.14   00:00:55 0050.0000.0900   10 Ethernet1/7         L
-192.168.30.30   00:00:02 0050.0000.0f00   30 port-channel6       L
+192.168.10.14   00:17:31 0050.0000.0900   10 Ethernet1/7         L
+192.168.20.30   00:00:35 0050.0000.0f00   20 port-channel6       L
 
 Leaf-4# sh ip arp suppression-cache r
 
@@ -3227,10 +2572,10 @@ Flags: + - Adjacencies synced via CFSoE
 
 Ip Address      Age      Mac Address    Vlan Physical-ifindex    Flags    Remote Vtep Addrs
 
-192.168.10.13   00:01:48 0050.0000.0800   10 (null)              R        10.0.0.3    
-192.168.10.11   04:52:21 0050.0000.0100   10 (null)              R        10.0.0.1    
-192.168.10.30   04:52:21 0050.0000.0d00   10 (null)              R        10.0.0.254  
-192.168.20.12   04:52:21 0050.0000.0700   20 (null)              R        10.0.0.2     
+192.168.10.11   01:57:09 0050.0000.0100   10 (null)              R        10.0.0.1    
+192.168.10.13   02:04:46 0050.0000.0800   10 (null)              R        10.0.0.3    
+192.168.10.30   02:09:37 0050.0000.0d00   10 (null)              R        10.0.0.254  
+192.168.20.12   02:00:47 0050.0000.0700   20 (null)              R        10.0.0.2    
 ```
 ### Вывод VPC
 ```
@@ -3244,7 +2589,7 @@ vPC keep-alive status             : peer is alive
 Configuration consistency status  : success 
 Per-vlan consistency status       : success                       
 Type-2 consistency status         : success 
-vPC role                          : secondary, operational primary
+vPC role                          : secondary                     
 Number of vPCs configured         : 1   
 Peer Gateway                      : Enabled
 Dual-active excluded VLANs        : -
@@ -3260,13 +2605,13 @@ vPC Peer-link status
 ---------------------------------------------------------------------
 id    Port   Status Active vlans    
 --    ----   ------ -------------------------------------------------
-1     Po1000 up     1-3,10,20,30,70,80                                                   
+1     Po1000 up     1-2,10,20                                                            
 
 vPC status
 ----------------------------------------------------------------------------
 Id    Port          Status Consistency Reason                Active vlans
 --    ------------  ------ ----------- ------                ---------------
-6     Po6           up     success     success               1-3,10,20,30,70,80
+6     Po6           up     success     success               1-2,10,20
 ```
 ### Вывод port-channel summary
 ```
@@ -3638,7 +2983,7 @@ interface Ethernet0/1
  channel-group 1 mode active
 !         
 interface Ethernet0/2
- switchport access vlan 30
+ switchport access vlan 20
  switchport mode access
  spanning-tree portfast edge
 !         
@@ -3669,8 +3014,7 @@ end
 ```
 ### Вывод MAC таблицы
 ```
-SW2#        sh mac ad
-SW2#        sh mac address-table 
+SW2#sh mac address-t
           Mac Address Table
 -------------------------------------------
 
@@ -3678,13 +3022,12 @@ Vlan    Mac Address       Type        Ports
 ----    -----------       --------    -----
    1    0026.f006.0000    DYNAMIC     Po1
    1    5006.0000.0106    DYNAMIC     Po1
-   1    5006.0000.1b08    DYNAMIC     Po1
    1    500a.0000.0106    DYNAMIC     Po1
-  30    0026.f006.0000    DYNAMIC     Po1
-  70    0026.f006.0000    DYNAMIC     Po1
-  80    0026.f006.0000    DYNAMIC     Po1
+  20    0000.0000.0001    DYNAMIC     Po1
   20    0026.f006.0000    DYNAMIC     Po1
-Total Mac Addresses for this criterion: 8
+  20    0050.0000.0f00    DYNAMIC     Et0/2
+  20    500a.0000.1b08    DYNAMIC     Po1
+Total Mac Addresses for this criterion: 7
 ```
 ### Вывод etherchannel summary
 ```
@@ -3718,7 +3061,7 @@ Group  Port-channel  Protocol    Ports
 
 ## ICMP
 
-### Опытным путем было установлено, что при наличии VPC трафик нормально не ходит. Нельзя перераспределить TCAM в сторону  hardware access-list tcam region ing-flow-redirect 512 что пускать трафик через SPAINE в vpc паре. На железе все красиво.
+### С этим есть проблема. Скорее всего не работает virtual peer-link. Ну или кривые руки, очень хотелось бы разобраться.
 
 <details>
   <summary><b>PC-1</b></summary>
@@ -3729,7 +3072,34 @@ Group  Port-channel  Protocol    Ports
   </p>
   
 </details>
-
+<details>
+  <summary><b>PC-2</b></summary>
+  <p>
+     
+![PC-2.png](PC-2.png)
+  </p>
+</details>
+<details>
+  <summary><b>PC-3</b></summary>
+  <p>
+     
+![PC-3.png](PC-3.png)
+  </p>
+</details>
+<details>
+  <summary><b>PC-4</b></summary>
+  <p>
+     
+![PC-4.png](PC-4.png)
+  </p>
+</details>
+<details>
+  <summary><b>PC-5</b></summary>
+  <p>
+     
+![PC-5.png](PC-5.png)
+  </p>
+</details>
 <details>
   <summary><b>PC-6</b></summary>
   <p>
